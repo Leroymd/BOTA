@@ -370,7 +370,7 @@ class BitGetClient {
     }
   }
 
-  /**
+ /**
  * Размещение ордера
  * @param {string} symbol - Символ торговой пары
  * @param {string} side - Сторона (BUY или SELL)
@@ -389,8 +389,9 @@ async placeOrder(symbol, side, orderType, size, price = null, reduceOnly = false
     return Promise.reject(error);
   }
 
-  // Проверяем, что side имеет правильное значение
-  if (side !== 'BUY' && side !== 'SELL') {
+  // Преобразуем side в нижний регистр и проверяем корректность
+  const normalizedSide = side.toLowerCase();
+  if (normalizedSide !== 'buy' && normalizedSide !== 'sell') {
     console.error(`Некорректное значение side: ${side}, должно быть BUY или SELL`);
     return Promise.reject(new Error(`Invalid side value: ${side}`));
   }
@@ -401,20 +402,20 @@ async placeOrder(symbol, side, orderType, size, price = null, reduceOnly = false
       symbol,
       marginCoin: 'USDT', // По умолчанию USDT
       size: size.toString(),
-      side: side, // Используем строковое значение 'BUY' или 'SELL'
-      orderType: orderType.toUpperCase(),
-      timeInForceValue: 'normal',
-      marginMode: 'isolated', // Важно: добавляем marginMode
+      side: normalizedSide === 'buy' ? 'buy' : 'sell', // Переводим в нижний регистр для API
+      orderType: orderType.toLowerCase(), // API ожидает orderType в нижнем регистре
+      force: 'normal', // Вместо timeInForceValue используем force согласно документации
+      marginMode: 'isolated',
       clientOid: `order_${Date.now()}`
     };
 
-    // Добавляем reduceOnly только если он true (согласно документации BitGet)
+    // Добавляем reduceOnly только если он true
     if (reduceOnly === true) {
       params.reduceOnly = true;
     }
 
     // Если это лимитный ордер, добавляем цену
-    if (orderType.toUpperCase() === 'LIMIT' && price) {
+    if (orderType.toLowerCase() === 'limit' && price) {
       params.price = price.toString();
     }
 

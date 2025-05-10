@@ -92,13 +92,14 @@ async updatePositionParams(positionId, params) {
         triggerPrice: takeProfitPrice.toFixed(6),
         triggerType: 'market_price',
         orderType: 'market',
-        side: position.type === 'LONG' ? 3 : 4, // 3 - close long, 4 - close short
+        side: position.type === 'LONG' ? 'sell' : 'buy', // Исправлено: используем строковые значения
         size: '100%',
-        clientOid: `tp_${position.id}`
+        clientOid: `tp_${position.id}_${new Date().getTime()}`,
+        reduceOnly: true // Добавлено для закрытия существующей позиции
       };
       
       await this.client.submitPlanOrder(tpParams);
-      console.log(`Обновлен тейк-профит для позиции ${position.id} до ${takeProfitPrice.toFixed(6)}`);
+      console.log(`Обновлен тейк-профит для позиции ${positionId} до ${takeProfitPrice.toFixed(6)}`);
     }
     
     // Обновляем стоп-лосс при необходимости
@@ -127,13 +128,14 @@ async updatePositionParams(positionId, params) {
         triggerPrice: stopLossPrice.toFixed(6),
         triggerType: 'market_price',
         orderType: 'market',
-        side: position.type === 'LONG' ? 3 : 4, // 3 - close long, 4 - close short
+        side: position.type === 'LONG' ? 'sell' : 'buy', // Исправлено: используем строковые значения
         size: '100%',
-        clientOid: `sl_${position.id}`
+        clientOid: `sl_${position.id}_${new Date().getTime()}`,
+        reduceOnly: true // Добавлено для закрытия существующей позиции
       };
       
       await this.client.submitPlanOrder(slParams);
-      console.log(`Обновлен стоп-лосс для позиции ${position.id} до ${stopLossPrice.toFixed(6)}`);
+      console.log(`Обновлен стоп-лосс для позиции ${positionId} до ${stopLossPrice.toFixed(6)}`);
     }
     
     // Обновляем настройки трейлинг-стопа при необходимости
@@ -407,8 +409,8 @@ async openPosition(type, price, reason, confidenceLevel = 0) {
     console.log(`Тип: ${type}, Размер: ${positionSize} USDT, Цена: ${price}, Уверенность: ${confidenceLevel}%`);
     console.log(`Причина: ${reason}`);
     
-    // Определяем side для BitGet API
-    const side = type === 'LONG' ? 'BUY' : 'SELL';
+    // Определяем side для BitGet API (строковое значение в нижнем регистре)
+    const side = type === 'LONG' ? 'buy' : 'sell';
     
     console.log(`Создание ${type} позиции (side=${side}) размером ${positionSize} USDT по рыночной цене...`);
     
@@ -417,7 +419,7 @@ async openPosition(type, price, reason, confidenceLevel = 0) {
       const orderResult = await this.client.placeOrder(
         this.config.symbol,
         side,
-        'MARKET',
+        'market',  // Исправлено: использование нижнего регистра
         positionSize,
         null,  // Нет цены для рыночного ордера
         false  // Не reduceOnly
@@ -545,11 +547,15 @@ async openPosition(type, price, reason, confidenceLevel = 0) {
       
       console.log(`Закрытие ${actualClosePercentage}% позиции ${positionId} типа ${position.type}...`);
       
+      // Закрытие позиции — используем противоположное направление от типа позиции
+      // Для LONG позиции нужно использовать 'sell', для SHORT позиции - 'buy'
+      const side = position.type === 'LONG' ? 'sell' : 'buy';
+      
       // Закрытие позиции
       const orderResult = await this.client.placeOrder(
         this.config.symbol,
-        position.type === 'LONG' ? 'SELL' : 'BUY',
-        'MARKET',
+        side,
+        'market', // Используем market вместо MARKET
         closeSize,
         null,
         true // reduceOnly
@@ -595,7 +601,7 @@ async openPosition(type, price, reason, confidenceLevel = 0) {
     }
   }
 
-  /**
+/**
  * Установка тейк-профита и стоп-лосса
  * @param {string} positionType - Тип позиции (LONG или SHORT)
  * @param {string} orderId - ID ордера
@@ -608,9 +614,9 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
     console.log(`Установка TP/SL для позиции ${orderId} (${positionType})`);
     console.log(`TP цена: ${tpPrice.toFixed(6)}, SL цена: ${slPrice.toFixed(6)}`);
     
-    // Для TP/SL в submitPlanOrder нужно использовать правильный side
-    // Для закрытия LONG: 'SELL', для закрытия SHORT: 'BUY'
-    const tpSlSide = positionType === 'LONG' ? 'SELL' : 'BUY';
+    // Для TP/SL используем противоположное направление от типа позиции
+    // Для LONG позиции нужно использовать 'sell', для SHORT позиции - 'buy'
+    const tpSlSide = positionType === 'LONG' ? 'sell' : 'buy';
     
     // Параметры для TP
     const tpParams = {
@@ -621,7 +627,8 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
       orderType: 'market',
       side: tpSlSide,
       size: '100%',
-      clientOid: `tp_${orderId}_${new Date().getTime()}`
+      clientOid: `tp_${orderId}_${new Date().getTime()}`,
+      reduceOnly: true // Устанавливаем reduceOnly для закрытия позиции
     };
     
     // Параметры для SL
@@ -633,7 +640,8 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
       orderType: 'market',
       side: tpSlSide,
       size: '100%',
-      clientOid: `sl_${orderId}_${new Date().getTime()}`
+      clientOid: `sl_${orderId}_${new Date().getTime()}`,
+      reduceOnly: true // Устанавливаем reduceOnly для закрытия позиции
     };
     
     console.log('Параметры TP-ордера:', JSON.stringify(tpParams));
@@ -729,16 +737,19 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
         }
       }
       
-      // Создаем новый трейлинг-стоп
+      // Создаем новый трейлинг-стоп (используем тот же side, что и для закрытия)
+      const stopSide = position.type === 'LONG' ? 'sell' : 'buy';
+      
       const stopParams = {
         symbol: this.config.symbol,
         marginCoin: 'USDT',
         triggerPrice: trailingStopPrice.toFixed(6),
         triggerType: 'market_price',
         orderType: 'market',
-        side: position.type === 'LONG' ? 3 : 4, // 3 - close long, 4 - close short
+        side: stopSide,
         size: '100%',
-        clientOid: `ts_${position.id}_${new Date().getTime()}`
+        clientOid: `ts_${position.id}_${new Date().getTime()}`,
+        reduceOnly: true // Устанавливаем reduceOnly для закрытия позиции
       };
       
       const stopResult = await this.client.submitPlanOrder(stopParams);
@@ -813,11 +824,13 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
         
         console.log(`Создание DCA ордера #${i} для позиции ${position.id} по цене ${dcaPrice.toFixed(6)}`);
         
-        // Размещение лимитного DCA ордера
+        // Размещение лимитного DCA ордера с правильными строковыми значениями
+        const side = position.type === 'LONG' ? 'buy' : 'sell';
+        
         const orderResult = await this.client.placeOrder(
           this.config.symbol,
-          position.type === 'LONG' ? 'BUY' : 'SELL',
-          'LIMIT',
+          side,
+          'limit',
           dcaSize,
           dcaPrice.toFixed(6),
           false
@@ -844,105 +857,19 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
   }
 
   /**
-   * Обновление открытых позиций
-   * @param {number} currentPrice - Текущая цена
-   * @returns {Promise<Object[]>} - Список открытых позиций
+   * Получение списка открытых позиций
+   * @returns {Object[]} - Список открытых позиций
    */
-  async updateOpenPositions(currentPrice) {
-    try {
-      // Получение текущих позиций с BitGet
-      const positions = await this.client.getPositions(this.config.symbol);
-      
-      if (positions.data && positions.data.length > 0) {
-        // Обновляем информацию о позициях
-        for (const apiPosition of positions.data) {
-          const positionId = apiPosition.posId;
-          const positionType = apiPosition.holdSide === 'long' ? 'LONG' : 'SHORT';
-          const entryPrice = parseFloat(apiPosition.averageOpenPrice);
-          const size = parseFloat(apiPosition.margin);
-          
-          // Проверяем, есть ли эта позиция в нашем списке
-          const existingPosition = this.openPositions.find(p => p.id === positionId);
-          
-          if (existingPosition) {
-            // Обновляем информацию
-            existingPosition.entryPrice = entryPrice;
-            existingPosition.size = size;
-            
-            // Рассчитываем текущий P&L
-            const pnlPercentage = positionType === 'LONG'
-              ? ((currentPrice - entryPrice) / entryPrice) * 100 * this.config.leverage
-              : ((entryPrice - currentPrice) / entryPrice) * 100 * this.config.leverage;
-            
-            existingPosition.currentPnl = pnlPercentage;
-            
-            // Обновляем макс. P&L для трейлинг-стопа
-            if (pnlPercentage > existingPosition.highestPnl) {
-              existingPosition.highestPnl = pnlPercentage;
-            }
-            
-            if (pnlPercentage < existingPosition.lowestPnl) {
-              existingPosition.lowestPnl = pnlPercentage;
-            }
-          } else {
-            // Добавляем новую позицию, если ее нет в нашем списке
-            const newPosition = {
-              id: positionId,
-              type: positionType,
-              entryPrice: entryPrice,
-              size: size,
-              entryTime: new Date().getTime(), // Приблизительное время
-              takeProfitPrice: 0, // Будет обновлено позже
-              stopLossPrice: 0, // Будет обновлено позже
-              trailingStopActivated: false,
-              highestPnl: 0,
-              lowestPnl: 0,
-              currentPnl: 0,
-              confidenceLevel: 0,
-              partiallyClosedPercentage: 0,
-              dcaOrders: []
-            };
-            
-            this.openPositions.push(newPosition);
-          }
-        }
-        
-        // Удаляем позиции, которых больше нет в API
-        const closedPositions = [];
-        const stillOpenPositions = [];
-        
-        for (const position of this.openPositions) {
-          const stillExists = positions.data.some(apiPos => apiPos.posId === position.id);
-          
-          if (stillExists) {
-            stillOpenPositions.push(position);
-          } else {
-            closedPositions.push(position);
-          }
-        }
-        
-        // Обновляем статистику для закрытых позиций
-        for (const position of closedPositions) {
-          this.updatePositionHistory(position, 'closed', currentPrice);
-        }
-        
-        // Обновляем список открытых позиций
-        this.openPositions = stillOpenPositions;
-      } else {
-        // Если нет открытых позиций, проверяем были ли закрыты наши позиции
-        for (const position of this.openPositions) {
-          this.updatePositionHistory(position, 'closed', currentPrice);
-        }
-        
-        // Очищаем список
-        this.openPositions = [];
-      }
-      
-      return this.openPositions;
-    } catch (error) {
-      console.error('Ошибка при обновлении открытых позиций:', error);
-      return this.openPositions;
-    }
+  getOpenPositions() {
+    return this.openPositions;
+  }
+
+  /**
+   * Получение истории позиций
+   * @returns {Object[]} - История позиций
+   */
+  getPositionHistory() {
+    return this.positionHistory;
   }
 
   /**
@@ -989,22 +916,6 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
     } catch (error) {
       console.error('Ошибка при обновлении истории позиций:', error);
     }
-  }
-
-  /**
-   * Получение списка открытых позиций
-   * @returns {Object[]} - Список открытых позиций
-   */
-  getOpenPositions() {
-    return this.openPositions;
-  }
-
-  /**
-   * Получение истории позиций
-   * @returns {Object[]} - История позиций
-   */
-  getPositionHistory() {
-    return this.positionHistory;
   }
 }
 

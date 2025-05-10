@@ -3,9 +3,11 @@
 // Инициализация Socket.IO
 const socket = io();
 
-// Элементы интерфейса для одиночного бота
+// Элементы интерфейса
 const statusIndicator = document.getElementById('statusIndicator');
 const statusText = document.getElementById('statusText');
+const managerStatusIndicator = document.getElementById('managerStatusIndicator');
+const managerStatusText = document.getElementById('managerStatusText');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const balanceText = document.getElementById('balanceText');
@@ -26,6 +28,22 @@ const emaDownIcon = document.getElementById('emaDownIcon');
 const openPositionsTable = document.getElementById('openPositionsTable');
 const lastTradesTable = document.getElementById('lastTradesTable');
 
+// Дополнительные элементы для мультибота
+const multiBotTab = document.getElementById('multibot-tab');
+const multiBotContent = document.getElementById('multibot-content');
+const initializeManagerBtn = document.getElementById('initializeManagerBtn');
+const startManagerBtn = document.getElementById('startManagerBtn');
+const stopManagerBtn = document.getElementById('stopManagerBtn');
+const botCountInput = document.getElementById('botCountInput');
+const addBotsBtn = document.getElementById('addBotsBtn');
+const activePairsContainer = document.getElementById('activePairsContainer');
+const forceScanBtn = document.getElementById('forceScanBtn');
+const analyzeSymbolInput = document.getElementById('analyzeSymbolInput');
+const analyzePairBtn = document.getElementById('analyzePairBtn');
+const botInstancesTable = document.getElementById('botInstancesTable');
+const scannerLogsContent = document.getElementById('scannerLogsContent');
+const managerLogsContent = document.getElementById('managerLogsContent');
+
 // Элементы формы
 const strategySelect = document.getElementById('strategySelect');
 const symbolSelect = document.getElementById('symbolSelect');
@@ -35,6 +53,7 @@ const reinvestmentInput = document.getElementById('reinvestmentInput');
 const apiKeyInput = document.getElementById('apiKeyInput');
 const apiSecretInput = document.getElementById('apiSecretInput');
 const apiPassphraseInput = document.getElementById('apiPassphraseInput');
+const demoModeCheck = document.getElementById('demoModeCheck');
 const tpInput = document.getElementById('tpInput');
 const slInput = document.getElementById('slInput');
 const maxDurationInput = document.getElementById('maxDurationInput');
@@ -46,6 +65,27 @@ const maxPositionsInput = document.getElementById('maxPositionsInput');
 const dcaMaxOrdersInput = document.getElementById('dcaMaxOrdersInput');
 const dcaPriceStepInput = document.getElementById('dcaPriceStepInput');
 const dcaMultiplierInput = document.getElementById('dcaMultiplierInput');
+const partialCloseCheck = document.getElementById('partialCloseCheck');
+const partialClose1Input = document.getElementById('partialClose1Input');
+const partialCloseAmount1Input = document.getElementById('partialCloseAmount1Input');
+const partialClose2Input = document.getElementById('partialClose2Input');
+const partialCloseAmount2Input = document.getElementById('partialCloseAmount2Input');
+const indicatorsAsRecommendationRadio = document.getElementById('indicatorsAsRecommendationRadio');
+const indicatorsAsRequirementRadio = document.getElementById('indicatorsAsRequirementRadio');
+const confidenceThresholdRange = document.getElementById('confidenceThresholdRange');
+const confidenceThresholdValue = document.getElementById('confidenceThresholdValue');
+
+// Модальное окно для частичного закрытия
+const partialCloseModal = new bootstrap.Modal(document.getElementById('partialCloseModal'));
+const partialClosePositionId = document.getElementById('partialClosePositionId');
+const partialClosePercentageRange = document.getElementById('partialClosePercentageRange');
+const partialClosePercentageValue = document.getElementById('partialClosePercentageValue');
+const confirmPartialCloseBtn = document.getElementById('confirmPartialCloseBtn');
+
+// Модальное окно для результатов анализа пары
+const pairAnalysisModal = new bootstrap.Modal(document.getElementById('pairAnalysisModal'));
+const pairAnalysisTitle = document.getElementById('pairAnalysisTitle');
+const pairAnalysisBody = document.getElementById('pairAnalysisBody');
 
 // Кнопки сохранения настроек
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
@@ -57,34 +97,14 @@ const notificationModal = new bootstrap.Modal(document.getElementById('notificat
 const notificationTitle = document.getElementById('notificationTitle');
 const notificationBody = document.getElementById('notificationBody');
 
-// Элементы интерфейса менеджера ботов
-const managerStatusIndicator = document.getElementById('managerStatusIndicator');
-const managerStatusText = document.getElementById('managerStatusText');
-const initManagerBtn = document.getElementById('initManagerBtn');
-const startManagerBtn = document.getElementById('startManagerBtn');
-const stopManagerBtn = document.getElementById('stopManagerBtn');
-const scanPairsBtn = document.getElementById('scanPairsBtn');
-const botCountInput = document.getElementById('botCountInput');
-const activeBotCount = document.getElementById('activeBotCount');
-const filteredPairsCount = document.getElementById('filteredPairsCount');
-const botsTableBody = document.getElementById('botsTableBody');
-const pairsTableBody = document.getElementById('pairsTableBody');
-const managerLogsContent = document.getElementById('managerLogsContent');
-const scannerLogsContent = document.getElementById('scannerLogsContent');
-const refreshManagerLogsBtn = document.getElementById('refreshManagerLogsBtn');
-const loadingIndicator = document.getElementById('loadingIndicator');
-const loadingMessage = document.getElementById('loadingMessage');
-
-// Переменные состояния менеджера ботов
-let managerInitialized = false;
-let managerRunning = false;
-let managerBots = {};
-let managerPairs = [];
-
 // График баланса
 let balanceChart;
 let balanceData = [];
 let timeData = [];
+
+// Статус менеджера
+let managerInitialized = false;
+let managerRunning = false;
 
 // Получение конфигурации бота при загрузке страницы
 window.addEventListener('DOMContentLoaded', async () => {
@@ -98,17 +118,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Получение статуса бота
     await fetchBotStatus();
     
+    // Получение статуса менеджера ботов
+    await fetchManagerStatus();
+    
     // Привязка обработчиков событий
     attachEventListeners();
-    
-    // Инициализация менеджера ботов
-    initManagerControls();
-    
-    // Запрос статуса менеджера
-    fetchManagerStatus();
-    
-    // Инициализация логов и индикаторов
-    initLoggingAndIndicators();
   } catch (error) {
     console.error('Ошибка при инициализации приложения:', error);
     showNotification('Ошибка', 'Не удалось инициализировать приложение. Проверьте консоль для деталей.');
@@ -226,6 +240,7 @@ async function fetchBotConfig() {
     leverageInput.value = config.leverage || 10;
     positionSizeInput.value = config.positionSize || 30;
     reinvestmentInput.value = config.reinvestment !== undefined ? config.reinvestment : 90;
+    demoModeCheck.checked = config.demo === true;
     
     // API ключи (показываем только маски, если они есть)
     if (config.apiKey) {
@@ -265,6 +280,68 @@ async function fetchBotConfig() {
       dcaMultiplierInput.value = config.dca.multiplier || 1.5;
     }
     
+    // Настройки частичного закрытия
+    if (config.partialClose) {
+      partialCloseCheck.checked = config.partialClose.enabled;
+      partialClose1Input.value = config.partialClose.level1 || 0.15;
+      partialCloseAmount1Input.value = config.partialClose.amount1 || 30;
+      partialClose2Input.value = config.partialClose.level2 || 0.25;
+      partialCloseAmount2Input.value = config.partialClose.amount2 || 50;
+    }
+    
+    // Настройки индикаторов (условие или рекомендация)
+    if (config.indicatorsAsRequirement !== undefined) {
+      if (config.indicatorsAsRequirement) {
+        indicatorsAsRequirementRadio.checked = true;
+      } else {
+        indicatorsAsRecommendationRadio.checked = true;
+      }
+    }
+    
+    if (config.confidenceThreshold) {
+      confidenceThresholdRange.value = config.confidenceThreshold;
+      confidenceThresholdValue.textContent = `${config.confidenceThreshold}%`;
+    }
+    
+    // Настройки индикаторов
+    if (config.entries && config.entries.rsi) {
+      document.getElementById('rsiEnabledCheck').checked = config.entries.rsi.enabled;
+      document.getElementById('rsiPeriodInput').value = config.entries.rsi.period || 14;
+      document.getElementById('rsiOverboughtInput').value = config.entries.rsi.overbought || 70;
+      document.getElementById('rsiOversoldInput').value = config.entries.rsi.oversold || 30;
+    }
+    
+    if (config.entries && config.entries.ema) {
+      document.getElementById('emaEnabledCheck').checked = config.entries.ema.enabled;
+      document.getElementById('emaFastInput').value = config.entries.ema.fastPeriod || 20;
+      document.getElementById('emaMediumInput').value = config.entries.ema.mediumPeriod || 50;
+      document.getElementById('emaSlowInput').value = config.entries.ema.slowPeriod || 100;
+    }
+    
+    if (config.entries && config.entries.bollingerBands) {
+      document.getElementById('bbEnabledCheck').checked = config.entries.bollingerBands.enabled;
+      document.getElementById('bbPeriodInput').value = config.entries.bollingerBands.period || 20;
+      document.getElementById('bbDeviationInput').value = config.entries.bollingerBands.deviation || 2;
+      document.getElementById('bbStrategySelect').value = config.entries.bollingerBands.strategy || 'bounce';
+    }
+    
+    if (config.filters) {
+      if (config.filters.adx) {
+        document.getElementById('adxEnabledCheck').checked = config.filters.adx.enabled;
+        document.getElementById('adxMinValueInput').value = config.filters.adx.minValue || 15;
+      }
+      
+      if (config.filters.volume) {
+        document.getElementById('volumeEnabledCheck').checked = config.filters.volume.enabled;
+        document.getElementById('volumeMinInput').value = config.filters.volume.minimumVolume || 0.5;
+      }
+      
+      document.getElementById('indicatorsCombinationSelect').value = config.filters.indicatorsCombination || 'all';
+    }
+    
+    // Отображение нужных настроек стратегии
+    toggleStrategySettings();
+    
     return config;
   } catch (error) {
     console.error('Ошибка при получении конфигурации:', error);
@@ -285,6 +362,557 @@ async function fetchBotStatus() {
     console.error('Ошибка при получении статуса:', error);
     showNotification('Ошибка', 'Не удалось получить статус бота');
     throw error;
+  }
+}
+
+// Получение статуса менеджера ботов
+async function fetchManagerStatus() {
+  try {
+    const response = await fetch('/api/manager/status');
+    const statusData = await response.json();
+    
+    updateManagerStatus(statusData);
+    
+    // Если менеджер инициализирован, получаем информацию о парах и ботах
+    if (statusData.status !== 'not_initialized') {
+      managerInitialized = true;
+      
+      if (statusData.status === 'running') {
+        managerRunning = true;
+      }
+      
+      // Получаем инфомацию о парах
+      await fetchPairsInfo();
+      
+      // Получаем логи менеджера
+      await fetchManagerLogs();
+      
+      // Получаем логи сканера
+      await fetchScannerLogs();
+    }
+    
+    return statusData;
+  } catch (error) {
+    console.error('Ошибка при получении статуса менеджера:', error);
+    // Не показываем уведомление, так как менеджер может быть не настроен
+    return { status: 'not_initialized' };
+  }
+}
+
+// Обновление статуса менеджера ботов
+function updateManagerStatus(status) {
+  try {
+    // Обновляем индикатор статуса
+    if (status.status === 'running') {
+      managerStatusIndicator.classList.add('active');
+      managerStatusText.textContent = 'Менеджер: Активен';
+      
+      // Обновляем состояние кнопок
+      initializeManagerBtn.disabled = true;
+      startManagerBtn.disabled = true;
+      stopManagerBtn.disabled = false;
+      addBotsBtn.disabled = false;
+      forceScanBtn.disabled = false;
+      analyzePairBtn.disabled = false;
+      
+      managerRunning = true;
+    } else if (status.status === 'initialized') {
+      managerStatusIndicator.classList.remove('active');
+      managerStatusText.textContent = 'Менеджер: Инициализирован';
+      
+      // Обновляем состояние кнопок
+      initializeManagerBtn.disabled = true;
+      startManagerBtn.disabled = false;
+      stopManagerBtn.disabled = true;
+      addBotsBtn.disabled = true;
+      forceScanBtn.disabled = false;
+      analyzePairBtn.disabled = false;
+      
+      managerInitialized = true;
+      managerRunning = false;
+    } else {
+      managerStatusIndicator.classList.remove('active');
+      managerStatusText.textContent = 'Менеджер: Не активен';
+      
+      // Обновляем состояние кнопок
+      initializeManagerBtn.disabled = false;
+      startManagerBtn.disabled = true;
+      stopManagerBtn.disabled = true;
+      addBotsBtn.disabled = true;
+      forceScanBtn.disabled = true;
+      analyzePairBtn.disabled = true;
+      
+      managerInitialized = false;
+      managerRunning = false;
+    }
+    
+    // Обновляем информацию о ботах
+    if (status.bots && status.bots.length > 0) {
+      updateBotInstancesTable(status.bots);
+    }
+  } catch (error) {
+    console.error('Ошибка при обновлении статуса менеджера:', error);
+  }
+}
+
+// Обновление таблицы экземпляров ботов
+function updateBotInstancesTable(bots) {
+  try {
+    if (!bots || bots.length === 0) {
+      botInstancesTable.innerHTML = '<tr><td colspan="6" class="text-center">Нет активных ботов</td></tr>';
+      return;
+    }
+    
+    let html = '';
+    
+    bots.forEach(bot => {
+      let statusClass = '';
+      let statusIcon = '';
+      
+      if (bot.status === 'running') {
+        statusClass = 'text-success';
+        statusIcon = '<i class="bi bi-play-circle-fill"></i>';
+      } else if (bot.status === 'stopped') {
+        statusClass = 'text-danger';
+        statusIcon = '<i class="bi bi-stop-circle-fill"></i>';
+      } else {
+        statusClass = 'text-warning';
+        statusIcon = '<i class="bi bi-exclamation-circle-fill"></i>';
+      }
+      
+      const pnlClass = bot.currentPnl >= 0 ? 'text-success' : 'text-danger';
+      const pnlIcon = bot.currentPnl >= 0 ? '<i class="bi bi-arrow-up"></i>' : '<i class="bi bi-arrow-down"></i>';
+      
+      html += `
+        <tr>
+          <td>${bot.id}</td>
+          <td>${bot.symbol}</td>
+          <td class="${statusClass}">${statusIcon} ${bot.status}</td>
+          <td>${bot.balance ? bot.balance.toFixed(2) : '0.00'} USDT</td>
+          <td class="${pnlClass}">${pnlIcon} ${bot.currentPnl ? bot.currentPnl.toFixed(2) : '0.00'}%</td>
+          <td>${bot.openPositions ? bot.openPositions.length : 0}</td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              ${bot.status === 'running' 
+                ? `<button class="btn btn-danger stop-bot-btn" data-bot-id="${bot.id}"><i class="bi bi-stop-fill"></i> Стоп</button>` 
+                : `<button class="btn btn-success start-bot-btn" data-bot-id="${bot.id}"><i class="bi bi-play-fill"></i> Старт</button>`}
+              <button class="btn btn-warning restart-bot-btn" data-bot-id="${bot.id}"><i class="bi bi-arrow-repeat"></i> Рестарт</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+    
+    botInstancesTable.innerHTML = html;
+    
+    // Добавляем обработчики для кнопок управления ботами
+    document.querySelectorAll('.stop-bot-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const botId = e.currentTarget.dataset.botId;
+        if (confirm(`Вы уверены, что хотите остановить бота ${botId}?`)) {
+          await stopBot(botId);
+        }
+      });
+    });
+    
+    document.querySelectorAll('.start-bot-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const botId = e.currentTarget.dataset.botId;
+        await startBot(botId);
+      });
+    });
+    
+    document.querySelectorAll('.restart-bot-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const botId = e.currentTarget.dataset.botId;
+        if (confirm(`Вы уверены, что хотите перезапустить бота ${botId}?`)) {
+          await restartBot(botId);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Ошибка при обновлении таблицы ботов:', error);
+    botInstancesTable.innerHTML = '<tr><td colspan="6" class="text-center">Ошибка при загрузке данных о ботах</td></tr>';
+  }
+}
+
+// Получение информации о парах
+async function fetchPairsInfo() {
+  try {
+    if (!managerInitialized) return;
+    
+    const response = await fetch('/api/manager/pairs');
+    const pairsInfo = await response.json();
+    
+    // Обновляем отображение пар
+    updatePairsDisplay(pairsInfo);
+    
+    return pairsInfo;
+  } catch (error) {
+    console.error('Ошибка при получении информации о парах:', error);
+    return [];
+  }
+}
+
+// Обновление отображения пар
+function updatePairsDisplay(pairsInfo) {
+  try {
+    if (!activePairsContainer) return;
+    
+    if (!pairsInfo || pairsInfo.length === 0) {
+      activePairsContainer.innerHTML = '<div class="alert alert-info">Нет активных торговых пар. Запустите сканирование, чтобы найти подходящие пары.</div>';
+      return;
+    }
+    
+    let html = '<div class="row">';
+    
+    pairsInfo.forEach(pair => {
+      // Определяем цвет на основе оценки пары
+      let scoreClass = 'bg-secondary';
+      if (pair.score >= 80) {
+        scoreClass = 'bg-success';
+      } else if (pair.score >= 60) {
+        scoreClass = 'bg-primary';
+      } else if (pair.score >= 40) {
+        scoreClass = 'bg-warning';
+      } else if (pair.score >= 20) {
+        scoreClass = 'bg-danger';
+      }
+      
+      // Формируем строку для отображения
+      html += `
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-header ${scoreClass} text-white">
+              <strong>${pair.symbol}</strong> 
+              <span class="float-end">Оценка: ${pair.score}%</span>
+            </div>
+            <div class="card-body p-2">
+              <div class="d-flex justify-content-between mb-1">
+                <span>Цена:</span>
+                <span>${pair.price.toFixed(4)} USDT</span>
+              </div>
+              <div class="d-flex justify-content-between mb-1">
+                <span>Объем (24ч):</span>
+                <span>${formatNumber(pair.volume)} USDT</span>
+              </div>
+              <div class="d-flex justify-content-between mb-1">
+                <span>Волатильность:</span>
+                <span>${pair.volatility.toFixed(2)}%</span>
+              </div>
+              <div class="d-flex justify-content-between">
+                <span>Тренд:</span>
+                <span class="${pair.trend === 'UP' ? 'text-success' : (pair.trend === 'DOWN' ? 'text-danger' : 'text-secondary')}">
+                  ${pair.trend === 'UP' ? '<i class="bi bi-arrow-up-circle-fill"></i> Восходящий' : 
+                    (pair.trend === 'DOWN' ? '<i class="bi bi-arrow-down-circle-fill"></i> Нисходящий' : 
+                    '<i class="bi bi-dash-circle-fill"></i> Нейтральный')}
+                </span>
+              </div>
+              <div class="mt-2">
+                <button class="btn btn-sm btn-outline-primary analyze-pair-btn" data-symbol="${pair.symbol}">
+                  <i class="bi bi-search"></i> Анализировать
+                </button>
+                <button class="btn btn-sm btn-outline-success use-pair-btn" data-symbol="${pair.symbol}">
+                  <i class="bi bi-plus-circle"></i> Использовать
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    
+    activePairsContainer.innerHTML = html;
+    
+    // Добавляем обработчики для кнопок
+    document.querySelectorAll('.analyze-pair-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const symbol = e.currentTarget.dataset.symbol;
+        await analyzePair(symbol);
+      });
+    });
+    
+    document.querySelectorAll('.use-pair-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const symbol = e.currentTarget.dataset.symbol;
+        symbolSelect.value = symbol;
+        
+        // Переключаемся на вкладку настроек
+        document.querySelector('#nav-tab button[data-bs-target="#nav-settings"]').click();
+        
+        // Прокручиваем к выбору символа
+        symbolSelect.scrollIntoView({ behavior: 'smooth' });
+        
+        // Подсвечиваем выбор символа
+        symbolSelect.classList.add('highlight-pulse');
+        setTimeout(() => {
+          symbolSelect.classList.remove('highlight-pulse');
+        }, 1500);
+      });
+    });
+  } catch (error) {
+    console.error('Ошибка при обновлении отображения пар:', error);
+    if (activePairsContainer) {
+      activePairsContainer.innerHTML = '<div class="alert alert-danger">Ошибка при отображении торговых пар</div>';
+    }
+  }
+}
+
+// Форматирование чисел для отображения
+function formatNumber(num) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(2) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(2) + 'K';
+  } else {
+    return num.toFixed(2);
+  }
+}
+
+// Получение логов менеджера
+async function fetchManagerLogs() {
+  try {
+    if (!managerInitialized || !managerLogsContent) return;
+    
+    const response = await fetch('/api/manager/logs');
+    const data = await response.json();
+    
+    if (data.success && data.logs && data.logs.length > 0) {
+      updateManagerLogs(data.logs);
+    }
+  } catch (error) {
+    console.error('Ошибка при получении логов менеджера:', error);
+    if (managerLogsContent) {
+      managerLogsContent.textContent = 'Ошибка при получении логов менеджера';
+    }
+  }
+}
+
+// Обновление логов менеджера
+function updateManagerLogs(logs) {
+  try {
+    if (!managerLogsContent) return;
+    
+    let html = '';
+    
+    logs.forEach(log => {
+      const timeString = new Date(log.timestamp).toLocaleTimeString();
+      let logClass = '';
+      
+      if (log.level === 'error') logClass = 'error';
+      else if (log.level === 'warning') logClass = 'warning';
+      else if (log.level === 'success') logClass = 'success';
+      
+      html += `<div class="log-entry ${logClass}">` +
+        `<span class="timestamp">[${timeString}]</span> ${log.message}</div>`;
+    });
+    
+    managerLogsContent.innerHTML = html || 'Нет логов менеджера';
+    
+    // Прокручиваем до последней записи
+    managerLogsContent.scrollTop = managerLogsContent.scrollHeight;
+  } catch (error) {
+    console.error('Ошибка при обновлении логов менеджера:', error);
+    if (managerLogsContent) {
+      managerLogsContent.textContent = 'Ошибка при обновлении логов менеджера';
+    }
+  }
+}
+
+// Получение логов сканера
+async function fetchScannerLogs() {
+  try {
+    if (!managerInitialized || !scannerLogsContent) return;
+    
+    const response = await fetch('/api/manager/scanner-logs');
+    const data = await response.json();
+    
+    if (data.success && data.logs && data.logs.length > 0) {
+      updateScannerLogs(data.logs);
+    }
+  } catch (error) {
+    console.error('Ошибка при получении логов сканера:', error);
+    if (scannerLogsContent) {
+      scannerLogsContent.textContent = 'Ошибка при получении логов сканера';
+    }
+  }
+}
+
+// Обновление логов сканера
+function updateScannerLogs(logs) {
+  try {
+    if (!scannerLogsContent) return;
+    
+    let html = '';
+    
+    logs.forEach(log => {
+      const timeString = new Date(log.timestamp).toLocaleTimeString();
+      let logClass = '';
+      
+      if (log.level === 'error') logClass = 'error';
+      else if (log.level === 'warning') logClass = 'warning';
+      else if (log.level === 'success') logClass = 'success';
+      
+      html += `<div class="log-entry ${logClass}">` +
+        `<span class="timestamp">[${timeString}]</span> ${log.message}</div>`;
+    });
+    
+    scannerLogsContent.innerHTML = html || 'Нет логов сканера';
+    
+    // Прокручиваем до последней записи
+    scannerLogsContent.scrollTop = scannerLogsContent.scrollHeight;
+  } catch (error) {
+    console.error('Ошибка при обновлении логов сканера:', error);
+    if (scannerLogsContent) {
+      scannerLogsContent.textContent = 'Ошибка при обновлении логов сканера';
+    }
+  }
+}
+
+// Анализ пары
+async function analyzePair(symbol) {
+  try {
+    if (!managerInitialized) {
+      showNotification('Ошибка', 'Менеджер ботов не инициализирован');
+      return;
+    }
+    
+    // Показываем модальное окно с индикатором загрузки
+    pairAnalysisTitle.textContent = `Анализ пары ${symbol}`;
+    pairAnalysisBody.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-3">Выполняется анализ пары...</p></div>';
+    pairAnalysisModal.show();
+    
+    // Выполняем запрос на анализ пары
+    const response = await fetch('/api/manager/analyze-pair', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ symbol })
+    });
+    
+    const result = await response.json();
+    
+    // Обновляем содержимое модального окна с результатами анализа
+    if (result.success) {
+      const data = result.result;
+      
+      // Формируем HTML для отображения результатов анализа
+      let html = `
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Основная информация</h5>
+            <table class="table table-sm">
+              <tr>
+                <td>Символ:</td>
+                <td><strong>${data.symbol}</strong></td>
+              </tr>
+              <tr>
+                <td>Текущая цена:</td>
+                <td>${data.price.toFixed(6)} USDT</td>
+              </tr>
+              <tr>
+                <td>Оценка:</td>
+                <td><strong class="${data.score >= 70 ? 'text-success' : (data.score >= 50 ? 'text-primary' : 'text-danger')}">${data.score}%</strong></td>
+              </tr>
+              <tr>
+                <td>Рекомендация:</td>
+                <td><strong class="${data.recommendation === 'BUY' ? 'text-success' : (data.recommendation === 'SELL' ? 'text-danger' : 'text-secondary')}">${data.recommendation}</strong></td>
+              </tr>
+              <tr>
+                <td>Тренд:</td>
+                <td class="${data.trend === 'UP' ? 'text-success' : (data.trend === 'DOWN' ? 'text-danger' : 'text-secondary')}">
+                  ${data.trend === 'UP' ? '<i class="bi bi-arrow-up-circle-fill"></i> Восходящий' : 
+                    (data.trend === 'DOWN' ? '<i class="bi bi-arrow-down-circle-fill"></i> Нисходящий' : 
+                    '<i class="bi bi-dash-circle-fill"></i> Нейтральный')}
+                </td>
+              </tr>
+              <tr>
+                <td>Волатильность:</td>
+                <td>${data.volatility.toFixed(2)}%</td>
+              </tr>
+              <tr>
+                <td>Суточный объем:</td>
+                <td>${formatNumber(data.volume)} USDT</td>
+              </tr>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <h5>Индикаторы</h5>
+            <table class="table table-sm">
+      `;
+      
+      // Добавляем данные индикаторов
+      if (data.indicators) {
+        for (const [key, value] of Object.entries(data.indicators)) {
+          let statusClass = '';
+          let statusText = '';
+          
+          if (typeof value === 'object' && value.status) {
+            statusClass = value.status === 'buy' ? 'text-success' : 
+                        (value.status === 'sell' ? 'text-danger' : 'text-secondary');
+            statusText = value.status.toUpperCase();
+          } else {
+            statusClass = 'text-secondary';
+            statusText = 'N/A';
+          }
+          
+          html += `
+            <tr>
+              <td>${key.toUpperCase()}:</td>
+              <td><span class="${statusClass}">${statusText}</span></td>
+            </tr>
+          `;
+        }
+      }
+      
+      html += `
+            </table>
+          </div>
+        </div>
+        ${data.message ? `<div class="alert alert-info mt-3">${data.message}</div>` : ''}
+        <div class="mt-3 text-center">
+          <button class="btn btn-success use-analyzed-pair-btn" data-symbol="${data.symbol}">
+            <i class="bi bi-plus-circle"></i> Использовать эту пару
+          </button>
+        </div>
+      `;
+      
+      pairAnalysisBody.innerHTML = html;
+      
+      // Добавляем обработчик для кнопки использования пары
+      document.querySelector('.use-analyzed-pair-btn').addEventListener('click', () => {
+        symbolSelect.value = data.symbol;
+        pairAnalysisModal.hide();
+        
+        // Переключаемся на вкладку настроек
+        document.querySelector('#nav-tab button[data-bs-target="#nav-settings"]').click();
+        
+        // Прокручиваем к выбору символа
+        symbolSelect.scrollIntoView({ behavior: 'smooth' });
+        
+        // Подсвечиваем выбор символа
+        symbolSelect.classList.add('highlight-pulse');
+        setTimeout(() => {
+          symbolSelect.classList.remove('highlight-pulse');
+        }, 1500);
+      });
+    } else {
+      pairAnalysisBody.innerHTML = `
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle-fill"></i> ${result.message || 'Не удалось выполнить анализ пары'}
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.error('Ошибка при анализе пары:', error);
+    pairAnalysisBody.innerHTML = `
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i> Произошла ошибка при анализе пары
+      </div>
+    `;
   }
 }
 
@@ -369,13 +997,8 @@ function updateBotStatus(status) {
       const losses = status.stats.totalTrades ? status.stats.totalTrades - wins : 0;
       winLossText.textContent = `${wins} / ${losses}`;
       
-      // Фактор прибыли (пока просто оценка)
-      if (status.stats.winRate > 0 && status.stats.totalTrades > 0) {
-        const estimatedProfitFactor = (status.stats.winRate / (100 - status.stats.winRate)) * 1.5;
-        profitFactorText.textContent = estimatedProfitFactor.toFixed(2);
-      } else {
-        profitFactorText.textContent = '0.00';
-      }
+      // Фактор прибыли
+      profitFactorText.textContent = status.stats.profitFactor ? status.stats.profitFactor.toFixed(2) : '0.00';
     } else {
       totalTradesText.textContent = '0';
       winLossText.textContent = '0 / 0';
@@ -414,11 +1037,11 @@ function updateBotStatus(status) {
         }
       }
       
-      if (status.indicators.fastEma !== undefined && status.indicators.slowEma !== undefined) {
-        emaText.textContent = `${status.indicators.fastEma.toFixed(2)} / ${status.indicators.slowEma.toFixed(2)}`;
+      if (status.indicators.ema !== undefined) {
+        emaText.textContent = `${status.indicators.ema.fast.toFixed(2)} / ${status.indicators.ema.slow.toFixed(2)}`;
         
         // Показываем стрелки для EMA
-        if (status.indicators.fastEma > status.indicators.slowEma) {
+        if (status.indicators.ema.fast > status.indicators.ema.slow) {
           emaUpIcon.classList.remove('d-none');
           emaDownIcon.classList.add('d-none');
         } else {
@@ -456,7 +1079,7 @@ function updateBotStatus(status) {
 function updateOpenPositionsTable(positions) {
   try {
     if (!positions || positions.length === 0) {
-      openPositionsTable.innerHTML = '<tr><td colspan="5" class="text-center">Нет открытых позиций</td></tr>';
+      openPositionsTable.innerHTML = '<tr><td colspan="6" class="text-center">Нет открытых позиций</td></tr>';
       return;
     }
     
@@ -465,6 +1088,9 @@ function updateOpenPositionsTable(positions) {
     positions.forEach(position => {
       const pnlClass = position.currentPnl >= 0 ? 'text-success' : 'text-danger';
       const positionTypeClass = position.type === 'LONG' ? 'position-long' : 'position-short';
+      const confidenceLevel = position.confidenceLevel || 0;
+      const confidenceClass = confidenceLevel >= 80 ? 'text-success' : 
+                            confidenceLevel >= 60 ? 'text-primary' : 'text-secondary';
       
       html += `
           <tr>
@@ -472,10 +1098,16 @@ function updateOpenPositionsTable(positions) {
               <td>${position.entryPrice.toFixed(4)}</td>
               <td>${position.size.toFixed(2)}</td>
               <td class="${pnlClass}">${position.currentPnl ? position.currentPnl.toFixed(2) : '0.00'}%</td>
+              <td class="${confidenceClass}">${confidenceLevel}%</td>
               <td>
-                  <button class="btn btn-sm btn-danger close-position-btn" data-position-id="${position.id}">
-                      <i class="bi bi-x-circle"></i> Закрыть
-                  </button>
+                  <div class="btn-group btn-group-sm">
+                      <button class="btn btn-danger close-position-btn" data-position-id="${position.id}">
+                          <i class="bi bi-x-circle"></i> Закрыть
+                      </button>
+                      <button class="btn btn-outline-secondary partial-close-btn" data-position-id="${position.id}">
+                          <i class="bi bi-scissors"></i> Частично
+                      </button>
+                  </div>
               </td>
           </tr>
       `;
@@ -488,14 +1120,43 @@ function updateOpenPositionsTable(positions) {
       btn.addEventListener('click', async (e) => {
         const positionId = e.currentTarget.dataset.positionId;
         if (confirm('Вы уверены, что хотите закрыть эту позицию?')) {
-          // Здесь будет запрос на закрытие позиции
-          showNotification('Закрытие позиции', 'Функция закрытия позиции в разработке');
+          try {
+            const response = await fetch(`/api/bot/position/${positionId}/close`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ percentage: 100 })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              showNotification('Успех', 'Позиция успешно закрыта');
+            } else {
+              showNotification('Ошибка', `Не удалось закрыть позицию: ${result.message}`);
+            }
+          } catch (error) {
+            console.error('Ошибка при закрытии позиции:', error);
+            showNotification('Ошибка', 'Произошла ошибка при закрытии позиции');
+          }
         }
+      });
+    });
+    
+    // Добавляем обработчики для кнопок частичного закрытия
+    document.querySelectorAll('.partial-close-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const positionId = e.currentTarget.dataset.positionId;
+        partialClosePositionId.value = positionId;
+        partialClosePercentageRange.value = 50;
+        partialClosePercentageValue.textContent = '50%';
+        partialCloseModal.show();
       });
     });
   } catch (error) {
     console.error('Ошибка при обновлении таблицы позиций:', error);
-    openPositionsTable.innerHTML = '<tr><td colspan="5" class="text-center">Ошибка загрузки позиций</td></tr>';
+    openPositionsTable.innerHTML = '<tr><td colspan="6" class="text-center">Ошибка загрузки позиций</td></tr>';
   }
 }
 
@@ -503,7 +1164,7 @@ function updateOpenPositionsTable(positions) {
 function updateLastTradesTable(trades) {
   try {
     if (!trades || trades.length === 0) {
-      lastTradesTable.innerHTML = '<tr><td colspan="5" class="text-center">Нет данных о сделках</td></tr>';
+      lastTradesTable.innerHTML = '<tr><td colspan="6" class="text-center">Нет данных о сделках</td></tr>';
       return;
     }
     
@@ -512,6 +1173,9 @@ function updateLastTradesTable(trades) {
     trades.forEach(trade => {
       const resultClass = trade.result === 'win' ? 'trade-win' : (trade.result === 'loss' ? 'trade-loss' : '');
       const positionTypeClass = trade.type === 'LONG' ? 'position-long' : 'position-short';
+      const confidenceLevel = trade.confidenceLevel || 0;
+      const confidenceClass = confidenceLevel >= 80 ? 'text-success' : 
+                            confidenceLevel >= 60 ? 'text-primary' : 'text-secondary';
       
       html += `
           <tr>
@@ -519,6 +1183,7 @@ function updateLastTradesTable(trades) {
               <td>${trade.entryPrice.toFixed(4)}</td>
               <td>${trade.closePrice ? trade.closePrice.toFixed(4) : '-'}</td>
               <td class="${resultClass}">${trade.pnl ? trade.pnl.toFixed(2) : '0.00'}%</td>
+              <td class="${confidenceClass}">${confidenceLevel}%</td>
               <td class="${resultClass}">${trade.result ? trade.result.toUpperCase() : 'OPEN'}</td>
           </tr>
       `;
@@ -527,7 +1192,7 @@ function updateLastTradesTable(trades) {
     lastTradesTable.innerHTML = html;
   } catch (error) {
     console.error('Ошибка при обновлении таблицы сделок:', error);
-    lastTradesTable.innerHTML = '<tr><td colspan="5" class="text-center">Ошибка загрузки сделок</td></tr>';
+    lastTradesTable.innerHTML = '<tr><td colspan="6" class="text-center">Ошибка загрузки сделок</td></tr>';
   }
 }
 
@@ -626,6 +1291,260 @@ function attachEventListeners() {
       }
     });
     
+    // Инициализация менеджера ботов
+    initializeManagerBtn.addEventListener('click', async () => {
+      try {
+        // Проверяем, заполнены ли API ключи
+        if (!apiKeyInput.value || !apiSecretInput.value || !apiPassphraseInput.value) {
+          showNotification('Ошибка', 'Необходимо заполнить API ключи BitGet для инициализации менеджера');
+          return;
+        }
+        
+        // Отправляем запрос на инициализацию менеджера
+        const response = await fetch('/api/manager/initialize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Успех', 'Менеджер ботов успешно инициализирован');
+          await fetchManagerStatus(); // Обновляем статус
+        } else {
+          showNotification('Ошибка', `Не удалось инициализировать менеджер: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Ошибка при инициализации менеджера:', error);
+        showNotification('Ошибка', 'Произошла ошибка при инициализации менеджера');
+      }
+    });
+    
+    // Запуск менеджера ботов
+    startManagerBtn.addEventListener('click', async () => {
+      try {
+        const botCount = parseInt(botCountInput.value) || 1;
+        
+        if (botCount < 1 || botCount > 5) {
+          showNotification('Ошибка', 'Количество ботов должно быть от 1 до 5');
+          return;
+        }
+        
+        // Отправляем запрос на запуск менеджера
+        const response = await fetch('/api/manager/start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ botCount })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Успех', `Менеджер ботов успешно запущен с ${botCount} ботами`);
+          await fetchManagerStatus(); // Обновляем статус
+        } else {
+          showNotification('Ошибка', `Не удалось запустить менеджер: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Ошибка при запуске менеджера:', error);
+        showNotification('Ошибка', 'Произошла ошибка при запуске менеджера');
+      }
+    });
+    
+    // Остановка менеджера ботов
+    stopManagerBtn.addEventListener('click', async () => {
+      try {
+        if (confirm('Вы уверены, что хотите остановить менеджер ботов? Это остановит все активные боты.')) {
+          // Отправляем запрос на остановку менеджера
+          const response = await fetch('/api/manager/stop', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            showNotification('Успех', 'Менеджер ботов успешно остановлен');
+            await fetchManagerStatus(); // Обновляем статус
+          } else {
+            showNotification('Ошибка', `Не удалось остановить менеджер: ${result.message}`);
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка при остановке менеджера:', error);
+        showNotification('Ошибка', 'Произошла ошибка при остановке менеджера');
+      }
+    });
+    
+    // Добавление ботов
+    addBotsBtn.addEventListener('click', async () => {
+      try {
+        const botCount = parseInt(botCountInput.value) || 1;
+        
+        if (botCount < 1) {
+          showNotification('Ошибка', 'Количество ботов должно быть положительным числом');
+          return;
+        }
+        
+        // Отправляем запрос на добавление ботов
+        const response = await fetch('/api/manager/add-bots', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ botCount })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Успех', `Добавлено ${result.bots.length} ботов`);
+          await fetchManagerStatus(); // Обновляем статус
+        } else {
+          showNotification('Ошибка', `Не удалось добавить ботов: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Ошибка при добавлении ботов:', error);
+        showNotification('Ошибка', 'Произошла ошибка при добавлении ботов');
+      }
+    });
+    
+    // Принудительное сканирование пар
+    forceScanBtn.addEventListener('click', async () => {
+      try {
+        // Меняем текст кнопки на индикатор загрузки
+        const originalText = forceScanBtn.innerHTML;
+        forceScanBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Сканирование...';
+        forceScanBtn.disabled = true;
+        
+        // Отправляем запрос на запуск сканирования
+        const response = await fetch('/api/manager/force-scan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Успех', `Сканирование завершено, найдено ${result.pairs.length} пар`);
+          // Обновляем информацию о парах
+          await fetchPairsInfo();
+          // Обновляем логи сканера
+          await fetchScannerLogs();
+        } else {
+          showNotification('Ошибка', `Не удалось выполнить сканирование: ${result.message}`);
+        }
+        
+        // Восстанавливаем состояние кнопки
+        forceScanBtn.innerHTML = originalText;
+        forceScanBtn.disabled = false;
+      } catch (error) {
+        console.error('Ошибка при выполнении сканирования:', error);
+        showNotification('Ошибка', 'Произошла ошибка при выполнении сканирования');
+        
+        // Восстанавливаем состояние кнопки
+        forceScanBtn.innerHTML = '<i class="bi bi-search"></i> Сканировать пары';
+        forceScanBtn.disabled = false;
+      }
+    });
+    
+    // Анализ конкретной пары
+    analyzePairBtn.addEventListener('click', async () => {
+      try {
+        const symbol = analyzeSymbolInput.value.trim().toUpperCase();
+        
+        if (!symbol) {
+          showNotification('Ошибка', 'Необходимо указать символ пары для анализа');
+          return;
+        }
+        
+        await analyzePair(symbol);
+      } catch (error) {
+        console.error('Ошибка при анализе пары:', error);
+        showNotification('Ошибка', 'Произошла ошибка при анализе пары');
+      }
+    });
+    
+    // Остановка конкретного бота
+    async function stopBot(botId) {
+      try {
+        const response = await fetch(`/api/manager/stop-bot/${botId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Успех', `Бот ${botId} успешно остановлен`);
+          await fetchManagerStatus(); // Обновляем статус
+        } else {
+          showNotification('Ошибка', `Не удалось остановить бота: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Ошибка при остановке бота:', error);
+        showNotification('Ошибка', 'Произошла ошибка при остановке бота');
+      }
+    }
+    
+    // Запуск конкретного бота
+    async function startBot(botId) {
+      try {
+        const response = await fetch(`/api/manager/start-bot/${botId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Успех', `Бот ${botId} успешно запущен`);
+          await fetchManagerStatus(); // Обновляем статус
+        } else {
+          showNotification('Ошибка', `Не удалось запустить бота: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Ошибка при запуске бота:', error);
+        showNotification('Ошибка', 'Произошла ошибка при запуске бота');
+      }
+    }
+    
+    // Перезапуск конкретного бота
+    async function restartBot(botId) {
+      try {
+        const response = await fetch(`/api/manager/restart-bot/${botId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Успех', `Бот ${botId} успешно перезапущен`);
+          await fetchManagerStatus(); // Обновляем статус
+        } else {
+          showNotification('Ошибка', `Не удалось перезапустить бота: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Ошибка при перезапуске бота:', error);
+        showNotification('Ошибка', 'Произошла ошибка при перезапуске бота');
+      }
+    }
+    
     // Сохранение API ключей
     saveApiBtn.addEventListener('click', async () => {
       try {
@@ -650,7 +1569,9 @@ function attachEventListeners() {
         }
         
         // Собираем API ключи
-        const apiSettings = {};
+        const apiSettings = {
+          demo: demoModeCheck.checked
+        };
         
         if (apiKey !== null) apiSettings.apiKey = apiKey;
         if (apiSecret !== null) apiSettings.apiSecret = apiSecret;
@@ -709,6 +1630,46 @@ function attachEventListeners() {
             maxOrders: parseInt(dcaMaxOrdersInput.value),
             priceStep: parseFloat(dcaPriceStepInput.value),
             multiplier: parseFloat(dcaMultiplierInput.value)
+          },
+          partialClose: {
+            enabled: partialCloseCheck.checked,
+            level1: parseFloat(partialClose1Input.value),
+            amount1: parseInt(partialCloseAmount1Input.value),
+            level2: parseFloat(partialClose2Input.value),
+            amount2: parseInt(partialCloseAmount2Input.value)
+          },
+          indicatorsAsRequirement: indicatorsAsRequirementRadio.checked,
+          confidenceThreshold: parseInt(confidenceThresholdRange.value),
+          entries: {
+            rsi: {
+              enabled: document.getElementById('rsiEnabledCheck').checked,
+              period: parseInt(document.getElementById('rsiPeriodInput').value),
+              overbought: parseInt(document.getElementById('rsiOverboughtInput').value),
+              oversold: parseInt(document.getElementById('rsiOversoldInput').value)
+            },
+            ema: {
+              enabled: document.getElementById('emaEnabledCheck').checked,
+              fastPeriod: parseInt(document.getElementById('emaFastInput').value),
+              mediumPeriod: parseInt(document.getElementById('emaMediumInput').value),
+              slowPeriod: parseInt(document.getElementById('emaSlowInput').value)
+            },
+            bollingerBands: {
+              enabled: document.getElementById('bbEnabledCheck').checked,
+              period: parseInt(document.getElementById('bbPeriodInput').value),
+              deviation: parseFloat(document.getElementById('bbDeviationInput').value),
+              strategy: document.getElementById('bbStrategySelect').value
+            }
+          },
+          filters: {
+            adx: {
+              enabled: document.getElementById('adxEnabledCheck').checked,
+              minValue: parseInt(document.getElementById('adxMinValueInput').value)
+            },
+            volume: {
+              enabled: document.getElementById('volumeEnabledCheck').checked,
+              minimumVolume: parseFloat(document.getElementById('volumeMinInput').value)
+            },
+            indicatorsCombination: document.getElementById('indicatorsCombinationSelect').value
           }
         };
         
@@ -734,6 +1695,49 @@ function attachEventListeners() {
       }
     });
     
+    // Обработчик для подтверждения частичного закрытия
+    confirmPartialCloseBtn.addEventListener('click', async () => {
+      try {
+        const positionId = partialClosePositionId.value;
+        const percentage = parseInt(partialClosePercentageRange.value);
+        
+        if (!positionId || !percentage) {
+          showNotification('Ошибка', 'Не удалось получить данные о позиции или проценте закрытия');
+          return;
+        }
+        
+        const response = await fetch(`/api/bot/position/${positionId}/close`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ percentage })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Успех', `Успешно закрыто ${percentage}% позиции`);
+          partialCloseModal.hide();
+        } else {
+          showNotification('Ошибка', `Не удалось частично закрыть позицию: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Ошибка при частичном закрытии позиции:', error);
+        showNotification('Ошибка', 'Произошла ошибка при частичном закрытии позиции');
+      }
+    });
+    
+    // Обновление отображаемого значения для порога уверенности
+    confidenceThresholdRange.addEventListener('input', () => {
+      confidenceThresholdValue.textContent = `${confidenceThresholdRange.value}%`;
+    });
+
+    // Обновление отображаемого значения для порога частичного закрытия
+    partialClosePercentageRange.addEventListener('input', () => {
+      partialClosePercentageValue.textContent = `${partialClosePercentageRange.value}%`;
+    });
+    
     // Очистка поля API ключа при фокусе, если оно замаскировано
     apiKeyInput.addEventListener('focus', () => {
       if (apiKeyInput.dataset.masked === 'true') {
@@ -757,990 +1761,41 @@ function attachEventListeners() {
         apiPassphraseInput.dataset.masked = 'false';
       }
     });
+    
+    // Переключение режима стратегии
+    strategySelect.addEventListener('change', toggleStrategySettings);
+    
+    // Обновление логов
+    document.getElementById('refreshLogsBtn').addEventListener('click', fetchLogs);
+    
+    // Инициализируем элементы всплывающих подсказок
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Начальная загрузка логов
+    fetchLogs();
+    
+    // Запускаем интервал обновления логов и индикаторов
+    setInterval(fetchLogs, 15000); // Обновление каждые 15 секунд
+    
+    // Обновление логов сканера и менеджера каждую минуту
+    setInterval(() => {
+      if (managerInitialized) {
+        fetchManagerLogs();
+        fetchScannerLogs();
+        fetchPairsInfo();
+      }
+    }, 60000);
   } catch (error) {
     console.error('Ошибка при настройке обработчиков событий:', error);
   }
 }
 
-// Инициализация элементов управления менеджером
-function initManagerControls() {
-    // Инициализация менеджера ботов
-    initManagerBtn.addEventListener('click', async () => {
-        showLoading('Инициализация менеджера ботов...');
-        try {
-            const result = await initializeManager();
-            if (result.success) {
-                showNotification('Успех', 'Менеджер ботов успешно инициализирован');
-                fetchManagerStatus();
-            } else {
-                showNotification('Ошибка', `Не удалось инициализировать менеджер ботов: ${result.message}`);
-            }
-        } catch (error) {
-            console.error('Ошибка при инициализации менеджера ботов:', error);
-            showNotification('Ошибка', 'Произошла ошибка при инициализации менеджера ботов');
-        } finally {
-            hideLoading();
-        }
-    });
-    
-    // Запуск менеджера ботов
-    startManagerBtn.addEventListener('click', async () => {
-        const botCount = parseInt(botCountInput.value) || 2;
-        
-        showLoading(`Запуск менеджера ботов с ${botCount} ботами...`);
-        try {
-            const result = await startManager(botCount);
-            if (result.success) {
-                showNotification('Успех', `Менеджер ботов успешно запущен с ${botCount} ботами`);
-                fetchManagerStatus();
-            } else {
-                showNotification('Ошибка', `Не удалось запустить менеджер ботов: ${result.message}`);
-            }
-        } catch (error) {
-            console.error('Ошибка при запуске менеджера ботов:', error);
-            showNotification('Ошибка', 'Произошла ошибка при запуске менеджера ботов');
-        } finally {
-            hideLoading();
-        }
-    });
-    
-    // Остановка менеджера ботов
-    stopManagerBtn.addEventListener('click', async () => {
-        if (confirm('Вы уверены, что хотите остановить менеджер ботов?')) {
-            showLoading('Остановка менеджера ботов...');
-            try {
-                const result = await stopManager();
-                if (result.success) {
-                    showNotification('Успех', 'Менеджер ботов успешно остановлен');
-                    fetchManagerStatus();
-                } else {
-                    showNotification('Ошибка', `Не удалось остановить менеджер ботов: ${result.message}`);
-                }
-            } catch (error) {
-                console.error('Ошибка при остановке менеджера ботов:', error);
-                showNotification('Ошибка', 'Произошла ошибка при остановке менеджера ботов');
-            } finally {
-                hideLoading();
-            }
-        }
-    });
-    
-    // Сканирование пар
-    scanPairsBtn.addEventListener('click', async () => {
-        showLoading('Сканирование пар...');
-        try {
-            const result = await forceScanPairs();
-            if (result.success) {
-                showNotification('Успех', `Сканирование пар завершено. Найдено ${result.pairs.length} пар`);
-                updatePairsTable(result.pairs);
-                fetchManagerStatus();
-            } else {
-                showNotification('Ошибка', `Не удалось завершить сканирование пар: ${result.message}`);
-            }
-        } catch (error) {
-            console.error('Ошибка при сканировании пар:', error);
-            showNotification('Ошибка', 'Произошла ошибка при сканировании пар');
-        } finally {
-            hideLoading();
-        }
-    });
-    
-    // Обновление логов менеджера
-    refreshManagerLogsBtn.addEventListener('click', () => {
-        fetchManagerLogs();
-        fetchScannerLogs();
-    });
-    
-    // Обработчики для модальных окон и обновления состояния
-    document.addEventListener('click', (event) => {
-        // Обработка кнопок остановки/перезапуска ботов
-        if (event.target.classList.contains('stop-bot-btn')) {
-            const botId = event.target.dataset.botId;
-            stopBot(botId);
-        } else if (event.target.classList.contains('restart-bot-btn')) {
-            const botId = event.target.dataset.botId;
-            restartBot(botId);
-        } else if (event.target.classList.contains('analyze-pair-btn')) {
-            const symbol = event.target.dataset.symbol;
-            analyzePair(symbol);
-        } else if (event.target.classList.contains('start-bot-for-pair-btn')) {
-            const symbol = event.target.dataset.symbol;
-            startBotForPair(symbol);
-        } else if (event.target.classList.contains('view-bot-details-btn')) {
-            const botId = event.target.dataset.botId;
-            showBotDetails(botId);
-        }
-    });
-}
-
-// Функции для взаимодействия с API
-
-// Инициализация менеджера ботов
-async function initializeManager() {
-    try {
-        const response = await fetch('/api/manager/initialize', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        return await response.json();
-    } catch (error) {
-        console.error('Ошибка при инициализации менеджера:', error);
-        throw error;
-    }
-}
-
-// Запуск менеджера ботов
-async function startManager(botCount) {
-    try {
-        const response = await fetch('/api/manager/start', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ botCount })
-        });
-        
-        return await response.json();
-    } catch (error) {
-        console.error('Ошибка при запуске менеджера:', error);
-        throw error;
-    }
-}
-
-// Остановка менеджера ботов
-async function stopManager() {
-    try {
-        const response = await fetch('/api/manager/stop', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        return await response.json();
-    } catch (error) {
-        console.error('Ошибка при остановке менеджера:', error);
-        throw error;
-    }
-}
-
-// Принудительное сканирование пар
-async function forceScanPairs() {
-    try {
-        const response = await fetch('/api/manager/force-scan', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        return await response.json();
-    } catch (error) {
-        console.error('Ошибка при сканировании пар:', error);
-        throw error;
-    }
-}
-
-// Получение статуса менеджера
-async function fetchManagerStatus() {
-    try {
-        const response = await fetch('/api/manager/status');
-        const status = await response.json();
-        
-        updateManagerStatus(status);
-        
-        return status;
-    } catch (error) {
-        console.error('Ошибка при получении статуса менеджера:', error);
-        throw error;
-    }
-}
-
-// Получение логов менеджера
-async function fetchManagerLogs() {
-    try {
-        const response = await fetch('/api/manager/logs');
-        const data = await response.json();
-        
-        if (data.success) {
-            updateManagerLogs(data.logs);
-        } else {
-            console.error('Ошибка при получении логов менеджера:', data.message);
-        }
-    } catch (error) {
-        console.error('Ошибка при получении логов менеджера:', error);
-    }
-}
-
-// Получение логов сканера
-async function fetchScannerLogs() {
-    try {
-        const response = await fetch('/api/manager/scanner-logs');
-        const data = await response.json();
-        
-        if (data.success) {
-            updateScannerLogs(data.logs);
-        } else {
-            console.error('Ошибка при получении логов сканера:', data.message);
-        }
-    } catch (error) {
-        console.error('Ошибка при получении логов сканера:', error);
-    }
-}
-
-// Остановка конкретного бота
-async function stopBot(botId) {
-    if (confirm(`Вы уверены, что хотите остановить бота ${botId}?`)) {
-        showLoading(`Остановка бота ${botId}...`);
-        try {
-            const response = await fetch(`/api/manager/stop-bot/${botId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showNotification('Успех', `Бот ${botId} успешно остановлен`);
-                fetchManagerStatus();
-            } else {
-                showNotification('Ошибка', `Не удалось остановить бота: ${result.message}`);
-            }
-        } catch (error) {
-            console.error(`Ошибка при остановке бота ${botId}:`, error);
-            showNotification('Ошибка', 'Произошла ошибка при остановке бота');
-        } finally {
-            hideLoading();
-        }
-    }
-}
-
-// Перезапуск конкретного бота
-async function restartBot(botId) {
-    if (confirm(`Вы уверены, что хотите перезапустить бота ${botId}?`)) {
-        showLoading(`Перезапуск бота ${botId}...`);
-        try {
-            const response = await fetch(`/api/manager/restart-bot/${botId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showNotification('Успех', `Бот ${botId} успешно перезапущен`);
-                fetchManagerStatus();
-            } else {
-                showNotification('Ошибка', `Не удалось перезапустить бота: ${result.message}`);
-            }
-        } catch (error) {
-            console.error(`Ошибка при перезапуске бота ${botId}:`, error);
-            showNotification('Ошибка', 'Произошла ошибка при перезапуске бота');
-        } finally {
-            hideLoading();
-        }
-    }
-}
-
-// Анализ конкретной пары
-async function analyzePair(symbol) {
-    showLoading(`Анализ пары ${symbol}...`);
-    try {
-        const response = await fetch('/api/manager/analyze-pair', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ symbol })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showPairAnalysis(result.result);
-        } else {
-            showNotification('Предупреждение', `Пара ${symbol} не соответствует критериям или произошла ошибка при анализе`);
-        }
-    } catch (error) {
-        console.error(`Ошибка при анализе пары ${symbol}:`, error);
-        showNotification('Ошибка', 'Произошла ошибка при анализе пары');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Запуск бота для конкретной пары
-async function startBotForPair(symbol) {
-    const botCount = 1;
-    showLoading(`Запуск бота для пары ${symbol}...`);
-    
-    try {
-        // Сначала останавливаем текущего бота, если есть
-        const stopResponse = await fetch('/api/manager/stop-bot/1', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        // Затем запускаем нового бота для выбранной пары
-        const response = await fetch('/api/manager/add-bots', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                botCount,
-                forcePair: symbol
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showNotification('Успех', `Бот для пары ${symbol} успешно запущен`);
-            fetchManagerStatus();
-        } else {
-            showNotification('Ошибка', `Не удалось запустить бота для пары ${symbol}: ${result.message}`);
-        }
-    } catch (error) {
-        console.error(`Ошибка при запуске бота для пары ${symbol}:`, error);
-        showNotification('Ошибка', 'Произошла ошибка при запуске бота');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Отображение анализа пары
-function showPairAnalysis(analysisResult) {
-    const modal = document.getElementById('analysisModal');
-    const modalTitle = document.getElementById('analysisModalTitle');
-    const modalBody = document.getElementById('analysisModalBody');
-    
-    modalTitle.textContent = `Анализ пары ${analysisResult.symbol}`;
-    
-    let modalContent = `
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Общая информация</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Цена:</strong> ${analysisResult.price.toFixed(6)} USDT</p>
-                <p><strong>Рейтинг пары:</strong> ${analysisResult.score}/100</p>
-                <p><strong>Итоговый сигнал:</strong> ${analysisResult.analysis.signal ? analysisResult.analysis.signal.toUpperCase() : 'Нет сигнала'}</p>
-                <p><strong>Причина:</strong> ${analysisResult.analysis.reason}</p>
-            </div>
-        </div>
-        
-        <div class="card mb-3">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Индикаторы</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Индикатор</th>
-                            <th>Значение</th>
-                            <th>Сигнал</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-    `;
-    
-    // RSI
-    const rsiData = analysisResult.analysis.indicators.rsi;
-    modalContent += `
-        <tr>
-            <td>RSI</td>
-            <td>${rsiData.value.toFixed(2)}</td>
-            <td class="${rsiData.signal === 'buy' ? 'text-success' : (rsiData.signal === 'sell' ? 'text-danger' : '')}">
-                ${rsiData.signal === 'buy' ? 'ПОКУПКА' : (rsiData.signal === 'sell' ? 'ПРОДАЖА' : 'НЕЙТРАЛЬНО')}
-            </td>
-        </tr>
-    `;
-    
-    // EMA
-    const emaData = analysisResult.analysis.indicators.ema;
-    modalContent += `
-        <tr>
-            <td>EMA</td>
-            <td>Быстрая: ${emaData.fast.toFixed(2)}<br>Средняя: ${emaData.medium.toFixed(2)}<br>Медленная: ${emaData.slow.toFixed(2)}</td>
-            <td class="${emaData.signal === 'buy' ? 'text-success' : (emaData.signal === 'sell' ? 'text-danger' : '')}">
-                ${emaData.signal === 'buy' ? 'ПОКУПКА' : (emaData.signal === 'sell' ? 'ПРОДАЖА' : 'НЕЙТРАЛЬНО')}
-            </td>
-        </tr>
-    `;
-    
-    // Bollinger Bands
-    const bbData = analysisResult.analysis.indicators.bb;
-    modalContent += `
-        <tr>
-            <td>Bollinger Bands</td>
-            <td>Верхняя: ${bbData.upper.toFixed(2)}<br>Средняя: ${bbData.middle.toFixed(2)}<br>Нижняя: ${bbData.lower.toFixed(2)}</td>
-            <td class="${bbData.signal === 'buy' ? 'text-success' : (bbData.signal === 'sell' ? 'text-danger' : '')}">
-                ${bbData.signal === 'buy' ? 'ПОКУПКА' : (bbData.signal === 'sell' ? 'ПРОДАЖА' : 'НЕЙТРАЛЬНО')}
-            </td>
-        </tr>
-    `;
-    
-    // ADX
-    const adxData = analysisResult.analysis.indicators.adx;
-    modalContent += `
-        <tr>
-            <td>ADX</td>
-            <td>${adxData.value.toFixed(2)}</td>
-            <td class="${adxData.signal === 'ok' ? 'text-success' : 'text-danger'}">
-                ${adxData.signal === 'ok' ? 'СИЛЬНЫЙ ТРЕНД' : 'СЛАБЫЙ ТРЕНД'}
-            </td>
-        </tr>
-    `;
-    
-    // Volume
-    const volData = analysisResult.analysis.indicators.volume;
-    modalContent += `
-        <tr>
-            <td>Объем</td>
-            <td>Текущий: ${volData.current.toFixed(2)}<br>Средний: ${volData.average.toFixed(2)}</td>
-            <td class="${volData.signal === 'ok' ? 'text-success' : 'text-danger'}">
-                ${volData.signal === 'ok' ? 'ДОСТАТОЧНЫЙ' : 'НЕДОСТАТОЧНЫЙ'}
-            </td>
-        </tr>
-    `;
-    
-    // ATR
-    const atrData = analysisResult.analysis.indicators.atr;
-    modalContent += `
-        <tr>
-            <td>ATR (волатильность)</td>
-            <td>${atrData.value.toFixed(6)} (${atrData.percent.toFixed(2)}%)</td>
-            <td class="${atrData.percent > 0.1 ? 'text-success' : (atrData.percent < 0.05 ? 'text-danger' : '')}">
-                ${atrData.percent > 0.1 ? 'ВЫСОКАЯ' : (atrData.percent < 0.05 ? 'НИЗКАЯ' : 'СРЕДНЯЯ')}
-            </td>
-        </tr>
-    `;
-    
-    modalContent += `
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div class="d-grid gap-2">
-            <button class="btn btn-primary start-bot-for-pair-btn" data-symbol="${analysisResult.symbol}">
-                <i class="bi bi-play-fill"></i> Запустить бота для этой пары
-            </button>
-        </div>
-    `;
-    
-    modalBody.innerHTML = modalContent;
-    
-    // Показываем модальное окно
-    const bootstrapModal = new bootstrap.Modal(modal);
-    bootstrapModal.show();
-}
-
-// Отображение деталей бота
-function showBotDetails(botId) {
-    const botInfo = managerBots[botId];
-    if (!botInfo) return;
-    
-    const modal = document.getElementById('botDetailsModal');
-    const modalTitle = document.getElementById('botDetailsModalTitle');
-    const modalBody = document.getElementById('botDetailsModalBody');
-    
-    modalTitle.textContent = `Детали бота ${botId} (${botInfo.pair})`;
-    
-    let modalContent = `
-        <div class="card mb-3">
-            <div class="card-header bg-${botInfo.status === 'running' ? 'success' : 'secondary'} text-white">
-                <h5 class="mb-0">Общая информация</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Статус:</strong> ${botInfo.status === 'running' ? 'Запущен' : 'Остановлен'}</p>
-                <p><strong>Пара:</strong> ${botInfo.pair}</p>
-                <p><strong>Время работы:</strong> ${formatUptime(botInfo.uptime)}</p>
-                <p><strong>Баланс:</strong> ${botInfo.botStatus?.balance?.toFixed(2) || 0} USDT</p>
-            </div>
-        </div>
-    `;
-    
-    // Если у бота есть открытые позиции
-    if (botInfo.botStatus?.openPositions && botInfo.botStatus.openPositions.length > 0) {
-        modalContent += `
-            <div class="card mb-3">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Открытые позиции</h5>
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Тип</th>
-                                <th>Вход</th>
-                                <th>Размер</th>
-                                <th>P&L</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-        
-        botInfo.botStatus.openPositions.forEach(pos => {
-            const pnlClass = pos.currentPnl >= 0 ? 'text-success' : 'text-danger';
-            modalContent += `
-                <tr>
-                    <td class="${pos.type === 'LONG' ? 'position-long' : 'position-short'}">${pos.type}</td>
-                    <td>${pos.entryPrice.toFixed(4)}</td>
-                    <td>${pos.size.toFixed(2)}</td>
-                    <td class="${pnlClass}">${pos.currentPnl?.toFixed(2) || '0.00'}%</td>
-                </tr>
-            `;
-        });
-        
-        modalContent += `
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-    
-    // Последние сделки
-    if (botInfo.botStatus?.lastTrades && botInfo.botStatus.lastTrades.length > 0) {
-        modalContent += `
-            <div class="card mb-3">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Последние сделки</h5>
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Тип</th>
-                                <th>Вход</th>
-                                <th>Выход</th>
-                                <th>P&L</th>
-                                <th>Результат</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-        
-        botInfo.botStatus.lastTrades.forEach(trade => {
-            const resultClass = trade.result === 'win' ? 'trade-win' : (trade.result === 'loss' ? 'trade-loss' : '');
-            modalContent += `
-                <tr>
-                    <td class="${trade.type === 'LONG' ? 'position-long' : 'position-short'}">${trade.type}</td>
-                    <td>${trade.entryPrice.toFixed(4)}</td>
-                    <td>${trade.closePrice ? trade.closePrice.toFixed(4) : '-'}</td>
-                    <td class="${resultClass}">${trade.pnl ? trade.pnl.toFixed(2) : '0.00'}%</td>
-                    <td class="${resultClass}">${trade.result ? trade.result.toUpperCase() : 'OPEN'}</td>
-                </tr>
-            `;
-        });
-        
-        modalContent += `
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-    
-    // Кнопки управления
-    modalContent += `
-        <div class="d-flex justify-content-between">
-            <button class="btn btn-danger stop-bot-btn" data-bot-id="${botId}">
-                <i class="bi bi-stop-fill"></i> Остановить бота
-            </button>
-            <button class="btn btn-warning restart-bot-btn" data-bot-id="${botId}">
-                <i class="bi bi-arrow-clockwise"></i> Перезапустить бота
-            </button>
-            <button class="btn btn-secondary" data-bs-dismiss="modal">
-                <i class="bi bi-x"></i> Закрыть
-            </button>
-        </div>
-    `;
-    
-    modalBody.innerHTML = modalContent;
-    
-    // Показываем модальное окно
-    const bootstrapModal = new bootstrap.Modal(modal);
-    bootstrapModal.show();
-}
-
-// Обновление статуса менеджера ботов
-function updateManagerStatus(status) {
-    try {
-        // Проверка на наличие данных
-        if (!status) {
-            console.warn('Получены пустые данные статуса менеджера');
-            return;
-        }
-        
-        // Обновляем индикатор статуса менеджера
-        if (status.status === 'not_initialized') {
-            managerStatusIndicator.classList.remove('active');
-            managerStatusText.textContent = 'Менеджер: Не инициализирован';
-            initManagerBtn.disabled = false;
-            startManagerBtn.disabled = true;
-            stopManagerBtn.disabled = true;
-            scanPairsBtn.disabled = true;
-            managerInitialized = false;
-            managerRunning = false;
-        } else {
-            managerInitialized = true;
-            initManagerBtn.disabled = true;
-            
-            // Проверяем активность менеджера
-            const isActive = status.activeBots > 0;
-            
-            if (isActive) {
-                managerStatusIndicator.classList.add('active');
-                managerStatusText.textContent = 'Менеджер: Активен';
-                startManagerBtn.disabled = true;
-                stopManagerBtn.disabled = false;
-                scanPairsBtn.disabled = false;
-                managerRunning = true;
-            } else {
-                managerStatusIndicator.classList.remove('active');
-                managerStatusText.textContent = 'Менеджер: Инициализирован';
-                startManagerBtn.disabled = false;
-                stopManagerBtn.disabled = true;
-                scanPairsBtn.disabled = false;
-                managerRunning = false;
-            }
-        }
-        
-        // Обновляем счетчики
-        activeBotCount.textContent = `${status.activeBots || 0}/${status.maxBots || 5}`;
-        
-        // Обновляем информацию о парах
-        if (status.scanner && status.scanner.filteredPairs) {
-            filteredPairsCount.textContent = status.scanner.filteredPairs.length || 0;
-            managerPairs = status.scanner.filteredPairs;
-            updatePairsTable(status.scanner.filteredPairs);
-        }
-        
-        // Обновляем информацию о ботах
-        if (status.bots) {
-            managerBots = status.bots;
-            updateBotsTable(status.bots);
-        }
-        
-        // Обновляем логи если нужно
-        if (managerInitialized && (managerLogsContent.textContent === 'Ожидание логов менеджера...' || 
-            scannerLogsContent.textContent === 'Ожидание логов сканера...')) {
-            fetchManagerLogs();
-            fetchScannerLogs();
-        }
-        
-    } catch (error) {
-        console.error('Ошибка при обновлении статуса менеджера:', error);
-    }
-}
-
-// Обновление таблицы ботов
-function updateBotsTable(bots) {
-    try {
-        const botIds = Object.keys(bots);
-        
-        if (botIds.length === 0) {
-            botsTableBody.innerHTML = '<tr><td colspan="7" class="text-center">Нет запущенных ботов</td></tr>';
-            return;
-        }
-        
-        let html = '';
-        
-        botIds.forEach(botId => {
-            const bot = bots[botId];
-            const botStatus = bot.botStatus || {};
-            
-            // Получаем данные для отображения
-            const statusClass = bot.status === 'running' ? 'bg-success text-white' : 'bg-secondary text-white';
-            const uptime = formatUptime(bot.uptime);
-            const balance = botStatus.balance ? botStatus.balance.toFixed(2) : '0.00';
-            
-            // Рассчитываем P&L
-            let pnl = 0;
-            let pnlClass = '';
-            
-            if (botStatus.pnl) {
-                pnl = botStatus.pnl.total || 0;
-                pnlClass = pnl >= 0 ? 'text-success' : 'text-danger';
-            }
-            
-            html += `
-                <tr>
-                    <td>${botId}</td>
-                    <td>${bot.pair}</td>
-                    <td class="${statusClass} text-center">${bot.status === 'running' ? 'Активен' : 'Остановлен'}</td>
-                    <td>${uptime}</td>
-                    <td>${balance} USDT</td>
-                    <td class="${pnlClass}">${pnl.toFixed(2)}%</td>
-                    <td>
-                        <button class="btn btn-sm btn-info view-bot-details-btn" data-bot-id="${botId}">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-warning restart-bot-btn" data-bot-id="${botId}">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger stop-bot-btn" data-bot-id="${botId}">
-                            <i class="bi bi-stop-fill"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-        
-        botsTableBody.innerHTML = html;
-    } catch (error) {
-        console.error('Ошибка при обновлении таблицы ботов:', error);
-        botsTableBody.innerHTML = '<tr><td colspan="7" class="text-center">Ошибка при загрузке информации о ботах</td></tr>';
-    }
-}
-
-// Обновление таблицы пар
-function updatePairsTable(pairs) {
-    try {
-        if (!pairs || pairs.length === 0) {
-            pairsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Нет отфильтрованных пар</td></tr>';
-            return;
-        }
-        
-        let html = '';
-        
-        // Сортируем пары по рейтингу
-        const sortedPairs = [...pairs].sort((a, b) => b.score - a.score);
-        
-        sortedPairs.forEach((pair, index) => {
-            // Получаем данные анализа
-            const analysis = pair.analysis || {};
-            const indicators = analysis.indicators || {};
-            
-            // Получаем значения индикаторов
-            const rsi = indicators.rsi ? indicators.rsi.value.toFixed(1) : '-';
-            const rsiClass = indicators.rsi ? 
-                (indicators.rsi.signal === 'buy' ? 'text-success' : 
-                 (indicators.rsi.signal === 'sell' ? 'text-danger' : '')) : '';
-            
-            const ema = indicators.ema ? 
-                `${indicators.ema.fast.toFixed(1)} / ${indicators.ema.slow.toFixed(1)}` : '-';
-            const emaClass = indicators.ema ? 
-                (indicators.ema.signal === 'buy' ? 'text-success' : 
-                 (indicators.ema.signal === 'sell' ? 'text-danger' : '')) : '';
-            
-            const adx = indicators.adx ? indicators.adx.value.toFixed(1) : '-';
-            const adxClass = indicators.adx ? 
-                (indicators.adx.signal === 'ok' ? 'text-success' : 'text-danger') : '';
-            
-            html += `
-                <tr>
-                    <td>${pair.symbol}</td>
-                    <td>${pair.score}/100</td>
-                    <td class="${rsiClass}">${rsi}</td>
-                    <td class="${emaClass}">${ema}</td>
-                    <td class="${adxClass}">${adx}</td>
-                    <td>
-                        <button class="btn btn-sm btn-info analyze-pair-btn" data-symbol="${pair.symbol}">
-                            <i class="bi bi-search"></i>
-                        </button>
-                        <button class="btn btn-sm btn-success start-bot-for-pair-btn" data-symbol="${pair.symbol}">
-                            <i class="bi bi-play-fill"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-        
-        pairsTableBody.innerHTML = html;
-    } catch (error) {
-        console.error('Ошибка при обновлении таблицы пар:', error);
-        pairsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Ошибка при загрузке информации о парах</td></tr>';
-    }
-}
-
-// Обновление логов менеджера
-function updateManagerLogs(logs) {
-    try {
-        if (!logs || logs.length === 0) {
-            managerLogsContent.textContent = 'Логи менеджера недоступны или пусты.';
-            return;
-        }
-        
-        let logsContent = '';
-        
-        // Переворачиваем массив, чтобы новые логи были внизу
-        const reversedLogs = [...logs].reverse();
-        
-        reversedLogs.forEach(log => {
-            const timeString = new Date(log.timestamp).toLocaleTimeString();
-            let logClass = '';
-            
-            if (log.level === 'error') logClass = 'error';
-            else if (log.level === 'warning') logClass = 'warning';
-            else if (log.level === 'success') logClass = 'success';
-            
-            logsContent += `<div class="log-entry ${logClass}">` +
-                `<span class="timestamp">[${timeString}]</span> ${log.message}</div>`;
-        });
-        
-        managerLogsContent.innerHTML = logsContent;
-        
-        // Прокручиваем до последней записи
-        managerLogsContent.scrollTop = managerLogsContent.scrollHeight;
-    } catch (error) {
-        console.error('Ошибка при обновлении логов менеджера:', error);
-        managerLogsContent.textContent = 'Ошибка при загрузке логов менеджера.';
-    }
-}
-
-// Обновление логов сканера
-function updateScannerLogs(logs) {
-    try {
-        if (!logs || logs.length === 0) {
-            scannerLogsContent.textContent = 'Логи сканера недоступны или пусты.';
-            return;
-        }
-        
-        let logsContent = '';
-        
-        // Переворачиваем массив, чтобы новые логи были внизу
-        const reversedLogs = [...logs].reverse();
-        
-        reversedLogs.forEach(log => {
-            const timeString = new Date(log.timestamp).toLocaleTimeString();
-            let logClass = '';
-            
-            if (log.level === 'error') logClass = 'error';
-            else if (log.level === 'warning') logClass = 'warning';
-            else if (log.level === 'success') logClass = 'success';
-            
-            logsContent += `<div class="log-entry ${logClass}">` +
-                `<span class="timestamp">[${timeString}]</span> ${log.message}</div>`;
-        });
-        
-        scannerLogsContent.innerHTML = logsContent;
-        
-        // Прокручиваем до последней записи
-        scannerLogsContent.scrollTop = scannerLogsContent.scrollHeight;
-    } catch (error) {
-        console.error('Ошибка при обновлении логов сканера:', error);
-        scannerLogsContent.textContent = 'Ошибка при загрузке логов сканера.';
-    }
-}
-
-// Форматирование времени работы
-function formatUptime(ms) {
-    if (!ms) return '00:00:00';
-    
-    const seconds = Math.floor(ms / 1000);
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
-
-// Показать индикатор загрузки
-function showLoading(message = 'Загрузка...') {
-    loadingMessage.textContent = message;
-    loadingIndicator.classList.remove('d-none');
-}
-
-// Скрыть индикатор загрузки
-function hideLoading() {
-    loadingIndicator.classList.add('d-none');
-}
-
-// Отображение уведомления
-function showNotification(title, message) {
-  try {
-    notificationTitle.textContent = title;
-    notificationBody.textContent = message;
-    notificationModal.show();
-  } catch (error) {
-    console.error('Ошибка при отображении уведомления:', error);
-    alert(`${title}: ${message}`);
-  }
-}
-
-// Инициализация логов и расширенных индикаторов
-function initLoggingAndIndicators() {
-  // Инициализация подсказок
-  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-  });
-  
-  // Обработчик обновления логов
-  document.getElementById('refreshLogsBtn').addEventListener('click', function() {
-    fetchLogs();
-  });
-  
-  // Обработчик для показа влияния изменения параметров в реальном времени
-  document.querySelectorAll('input[type="range"], input[type="number"], select, input[type="checkbox"]').forEach(function(input) {
-    input.addEventListener('change', function() {
-      updateStrategyPreview(this);
-    });
-    
-    // Для ползунков также слушаем событие input для обновления в реальном времени
-    if (input.type === 'range') {
-      input.addEventListener('input', function() {
-        updateStrategyPreview(this);
-      });
-    }
-  });
-  
-  // Показываем настройки соответствующей стратегии
-  document.getElementById('strategySelect').addEventListener('change', function() {
-    toggleStrategySettings();
-  });
-  
-  // Сразу активируем текущую стратегию
-  toggleStrategySettings();
-  
-  // Обработчик для уровня агрессивности стратегии
-  document.getElementById('strategyAggressivenessRange').addEventListener('input', function() {
-    updateAggressivenessPresets(this.value);
-  });
-  
-  // Настройка предустановок для Scalping режима
-  document.getElementById('scalpingModeSelect').addEventListener('change', function() {
-    applyScalpingModePreset(this.value);
-  });
-  
-  // Настройка предустановок для DCA режима
-  document.getElementById('dcaStrategySelect').addEventListener('change', function() {
-    applyDCAModePreset(this.value);
-  });
-  
-  // Сохранение расширенных настроек индикаторов
-  const originalSaveAdvancedSettings = document.getElementById('saveAdvancedSettingsBtn').onclick;
-  document.getElementById('saveAdvancedSettingsBtn').onclick = function() {
-    saveIndicatorSettings();
-    if (originalSaveAdvancedSettings) {
-      originalSaveAdvancedSettings.call(this);
-    }
-  };
-  
-  // Начальная загрузка логов
-  fetchLogs();
-  
-  // Запускаем интервал обновления логов и индикаторов
-  setInterval(fetchLogs, 15000); // Обновление каждые 15 секунд
-}
-
 // Переключение настроек стратегии
 function toggleStrategySettings() {
-  const strategy = document.getElementById('strategySelect').value;
+  const strategy = strategySelect.value;
   
   // Скрываем/показываем соответствующие блоки настроек
   if (strategy === 'SCALPING') {
@@ -1752,311 +1807,8 @@ function toggleStrategySettings() {
   }
 }
 
-// Обновление предпросмотра влияния настроек
-function updateStrategyPreview(inputElement) {
-  const id = inputElement.id;
-  let previewText = '';
-  let tooltipText = '';
-  
-  // Логика определения влияния параметра
-  switch(id) {
-    case 'tpInput':
-      const tpValue = parseFloat(inputElement.value);
-      if (tpValue > 0.5) {
-        previewText = `Установлено высокое значение ${tpValue}%. Ожидайте меньше сделок, но потенциально большую прибыль.`;
-      } else if (tpValue < 0.2) {
-        previewText = `Установлено низкое значение ${tpValue}%. Ожидайте больше сделок с небольшой прибылью.`;
-      } else {
-        previewText = `Установлено сбалансированное значение ${tpValue}%.`;
-      }
-      displayParameterEffect(inputElement, previewText);
-      break;
-      
-    case 'slInput':
-      const slValue = parseFloat(inputElement.value);
-      if (slValue > 0.3) {
-        previewText = `Установлено высокое значение ${slValue}%. Больший риск на сделку, но меньше преждевременных закрытий.`;
-      } else if (slValue < 0.15) {
-        previewText = `Установлено низкое значение ${slValue}%. Меньший риск на сделку, но возможны частые закрытия.`;
-      } else {
-        previewText = `Установлено сбалансированное значение ${slValue}%.`;
-      }
-      displayParameterEffect(inputElement, previewText);
-      break;
-      
-    case 'leverageInput':
-      const leverageValue = parseInt(inputElement.value);
-      if (leverageValue > 10) {
-        previewText = `Внимание! Высокое плечо ${leverageValue}x увеличивает как потенциальную прибыль, так и риск.`;
-      } else if (leverageValue < 5) {
-        previewText = `Консервативное плечо ${leverageValue}x. Меньший риск, но и меньшая прибыль.`;
-      } else {
-        previewText = `Сбалансированное плечо ${leverageValue}x.`;
-      }
-      displayParameterEffect(inputElement, previewText);
-      break;
-      
-    case 'positionSizeInput':
-      const positionValue = parseInt(inputElement.value);
-      if (positionValue > 40) {
-        previewText = `Внимание! Большой размер позиции ${positionValue}% увеличивает риск.`;
-      } else if (positionValue < 20) {
-        previewText = `Консервативный размер позиции ${positionValue}%. Меньший риск, но и меньшая прибыль.`;
-      } else {
-        previewText = `Сбалансированный размер позиции ${positionValue}%.`;
-      }
-      displayParameterEffect(inputElement, previewText);
-      break;
-      
-    case 'reinvestmentInput':
-      const reinvestValue = parseInt(inputElement.value);
-      if (reinvestValue > 90) {
-        previewText = `Агрессивное реинвестирование ${reinvestValue}%. Максимальный рост капитала, но выше риск.`;
-      } else if (reinvestValue < 50) {
-        previewText = `Консервативное реинвестирование ${reinvestValue}%. Медленный рост, но надежное сохранение прибыли.`;
-      } else {
-        previewText = `Сбалансированное реинвестирование ${reinvestValue}%.`;
-      }
-      displayParameterEffect(inputElement, previewText);
-      break;
-      
-    case 'rsiPeriodInput':
-      const rsiPeriod = parseInt(inputElement.value);
-      if (rsiPeriod < 10) {
-        previewText = `RSI с коротким периодом ${rsiPeriod}. Больше сигналов, но выше шум.`;
-      } else if (rsiPeriod > 20) {
-        previewText = `RSI с длинным периодом ${rsiPeriod}. Меньше сигналов, но более надежные.`;
-      } else {
-        previewText = `Стандартный период RSI ${rsiPeriod}.`;
-      }
-      displayParameterEffect(inputElement, previewText);
-      break;
-      
-    case 'rsiOverboughtInput':
-    case 'rsiOversoldInput':
-      const rsiOB = parseInt(document.getElementById('rsiOverboughtInput').value);
-      const rsiOS = parseInt(document.getElementById('rsiOversoldInput').value);
-      if (rsiOB - rsiOS < 30) {
-        previewText = `Узкий диапазон RSI (${rsiOS}-${rsiOB}). Много сигналов, выше риск ложных.`;
-      } else if (rsiOB - rsiOS > 50) {
-        previewText = `Широкий диапазон RSI (${rsiOS}-${rsiOB}). Меньше сигналов, но более надежные.`;
-      } else {
-        previewText = `Стандартный диапазон RSI (${rsiOS}-${rsiOB}).`;
-      }
-      displayParameterEffect(inputElement, previewText);
-      break;
-    
-    // Другие параметры...
-  }
-  
-  // Обновим таблицу сравнения если бот запущен
-  if (statusIndicator.classList.contains('active')) {
-    fetchComparisonData();
-  }
-}
-
-// Отображение эффекта изменения параметра
-function displayParameterEffect(inputElement, text) {
-  // Находим или создаем элемент для отображения информации
-  let infoElement = inputElement.parentElement.querySelector('.strategy-info');
-  if (!infoElement) {
-    infoElement = document.createElement('div');
-    infoElement.className = 'strategy-info';
-    
-    // Если есть родительский элемент input-group, добавляем после него
-    const inputGroup = inputElement.closest('.input-group') || inputElement;
-    if (inputGroup.nextElementSibling) {
-      inputGroup.parentElement.insertBefore(infoElement, inputGroup.nextElementSibling);
-    } else {
-      inputGroup.parentElement.appendChild(infoElement);
-    }
-  }
-  
-  // Устанавливаем текст
-  infoElement.textContent = text;
-  
-  // Добавляем временное выделение для привлечения внимания
-  infoElement.style.backgroundColor = '#f0f8ff';
-  setTimeout(() => {
-    infoElement.style.backgroundColor = 'transparent';
-  }, 500);
-}
-
-// Функция для обновления пресетов в зависимости от уровня агрессивности
-function updateAggressivenessPresets(level) {
-  level = parseInt(level);
-  
-  // Адаптируем настройки в зависимости от уровня агрессивности
-  const strategy = document.getElementById('strategySelect').value;
-  
-  if (strategy === 'SCALPING') {
-    // Настройки для Scalping стратегии
-    switch(level) {
-      case 1: // Очень консервативный
-        document.getElementById('tpInput').value = 0.4;
-        document.getElementById('slInput').value = 0.15;
-        document.getElementById('leverageInput').value = 5;
-        document.getElementById('positionSizeInput').value = 20;
-        document.getElementById('rsiOverboughtInput').value = 75;
-        document.getElementById('rsiOversoldInput').value = 25;
-        document.getElementById('adxMinValueInput').value = 25;
-        updateStrategyPreview(document.getElementById('tpInput'));
-        break;
-      case 2: // Консервативный
-        document.getElementById('tpInput').value = 0.35;
-        document.getElementById('slInput').value = 0.18;
-        document.getElementById('leverageInput').value = 7;
-        document.getElementById('positionSizeInput').value = 25;
-        document.getElementById('rsiOverboughtInput').value = 72;
-        document.getElementById('rsiOversoldInput').value = 28;
-        document.getElementById('adxMinValueInput').value = 22;
-        updateStrategyPreview(document.getElementById('tpInput'));
-        break;
-      case 3: // Нейтральный
-        document.getElementById('tpInput').value = 0.3;
-        document.getElementById('slInput').value = 0.2;
-        document.getElementById('leverageInput').value = 8;
-        document.getElementById('positionSizeInput').value = 30;
-        document.getElementById('rsiOverboughtInput').value = 70;
-        document.getElementById('rsiOversoldInput').value = 30;
-        document.getElementById('adxMinValueInput').value = 20;
-        updateStrategyPreview(document.getElementById('tpInput'));
-        break;
-      case 4: // Агрессивный
-        document.getElementById('tpInput').value = 0.25;
-        document.getElementById('slInput').value = 0.22;
-        document.getElementById('leverageInput').value = 10;
-        document.getElementById('positionSizeInput').value = 35;
-        document.getElementById('rsiOverboughtInput').value = 68;
-        document.getElementById('rsiOversoldInput').value = 32;
-        document.getElementById('adxMinValueInput').value = 18;
-        updateStrategyPreview(document.getElementById('tpInput'));
-        break;
-      case 5: // Очень агрессивный
-        document.getElementById('tpInput').value = 0.2;
-        document.getElementById('slInput').value = 0.25;
-        document.getElementById('leverageInput').value = 12;
-        document.getElementById('positionSizeInput').value = 40;
-        document.getElementById('rsiOverboughtInput').value = 65;
-        document.getElementById('rsiOversoldInput').value = 35;
-        document.getElementById('adxMinValueInput').value = 15;
-        updateStrategyPreview(document.getElementById('tpInput'));
-        break;
-    }
-  } else if (strategy === 'DCA') {
-    // Настройки для DCA стратегии
-    switch(level) {
-      case 1: // Очень консервативный
-        document.getElementById('dcaMaxOrdersInput').value = 2;
-        document.getElementById('tpInput').value = 0.5;
-        document.getElementById('slInput').value = 0.4;
-        document.getElementById('leverageInput').value = 3;
-        document.getElementById('positionSizeInput').value = 15;
-        updateStrategyPreview(document.getElementById('tpInput'));
-        break;
-      case 5: // Очень агрессивный
-        document.getElementById('dcaMaxOrdersInput').value = 5;
-        document.getElementById('tpInput').value = 0.3;
-        document.getElementById('slInput').value = 0.6;
-        document.getElementById('leverageInput').value = 10;
-        document.getElementById('positionSizeInput').value = 30;
-        updateStrategyPreview(document.getElementById('tpInput'));
-        break;
-      default: // Промежуточные уровни
-        // Настройки пропорционально между консервативными и агрессивными
-        document.getElementById('dcaMaxOrdersInput').value = Math.min(Math.round(level), 5);
-        document.getElementById('tpInput').value = (0.5 - ((level - 1) * 0.05)).toFixed(2);
-        document.getElementById('slInput').value = (0.4 + ((level - 1) * 0.05)).toFixed(2);
-        document.getElementById('leverageInput').value = 3 + ((level - 1) * 1.75);
-        document.getElementById('positionSizeInput').value = 15 + ((level - 1) * 3.75);
-        updateStrategyPreview(document.getElementById('tpInput'));
-        break;
-    }
-  }
-}
-
-// Применение предустановок для режима Scalping
-function applyScalpingModePreset(mode) {
-  switch(mode) {
-    case 'standard':
-      document.getElementById('tpInput').value = 0.3;
-      document.getElementById('slInput').value = 0.2;
-      document.getElementById('tsActivationInput').value = 0.15;
-      document.getElementById('tsDistanceInput').value = 0.1;
-      document.getElementById('maxDurationInput').value = 5;
-      document.getElementById('rsiPeriodInput').value = 14;
-      document.getElementById('adxMinValueInput').value = 20;
-      document.getElementById('volumeMinInput').value = 0.5;
-      updateStrategyPreview(document.getElementById('tpInput'));
-      addLogEntry('Применен стандартный режим скальпинга', 'trading');
-      break;
-    case 'ultra':
-      document.getElementById('tpInput').value = 0.25;
-      document.getElementById('slInput').value = 0.15;
-      document.getElementById('tsActivationInput').value = 0.12;
-      document.getElementById('tsDistanceInput').value = 0.08;
-      document.getElementById('maxDurationInput').value = 3;
-      document.getElementById('rsiPeriodInput').value = 10;
-      document.getElementById('adxMinValueInput').value = 15;
-      document.getElementById('volumeMinInput').value = 0.7;
-      updateStrategyPreview(document.getElementById('tpInput'));
-      addLogEntry('Применен режим ультра-скальпинга. Повышенная частота сделок, пониженная прибыль на сделку.', 'trading');
-      break;
-    case 'safe':
-      document.getElementById('tpInput').value = 0.4;
-      document.getElementById('slInput').value = 0.2;
-      document.getElementById('tsActivationInput').value = 0.2;
-      document.getElementById('tsDistanceInput').value = 0.15;
-      document.getElementById('maxDurationInput').value = 8;
-      document.getElementById('rsiPeriodInput').value = 18;
-      document.getElementById('adxMinValueInput').value = 25;
-      document.getElementById('volumeMinInput').value = 0.8;
-      updateStrategyPreview(document.getElementById('tpInput'));
-      addLogEntry('Применен безопасный режим скальпинга. Пониженная частота сделок, более строгие фильтры.', 'trading');
-      break;
-  }
-}
-
-// Применение предустановок для режима DCA
-function applyDCAModePreset(mode) {
-  switch(mode) {
-    case 'standard':
-      document.getElementById('dcaMaxOrdersInput').value = 3;
-      document.getElementById('tpInput').value = 0.4;
-      document.getElementById('slInput').value = 0.5;
-      document.getElementById('maxDurationInput').value = 15;
-      updateStrategyPreview(document.getElementById('tpInput'));
-      addLogEntry('Применен стандартный режим DCA', 'trading');
-      break;
-    case 'aggressive':
-      document.getElementById('dcaMaxOrdersInput').value = 5;
-      document.getElementById('tpInput').value = 0.3;
-      document.getElementById('slInput').value = 0.7;
-      document.getElementById('maxDurationInput').value = 30;
-      updateStrategyPreview(document.getElementById('tpInput'));
-      addLogEntry('Применен агрессивный режим DCA. Большее количество усреднений, повышенный риск.', 'trading');
-      break;
-    case 'safe':
-      document.getElementById('dcaMaxOrdersInput').value = 2;
-      document.getElementById('tpInput').value = 0.5;
-      document.getElementById('slInput').value = 0.3;
-      document.getElementById('maxDurationInput').value = 10;
-      updateStrategyPreview(document.getElementById('tpInput'));
-      addLogEntry('Применен безопасный режим DCA. Минимальное количество усреднений, более низкий риск.', 'trading');
-      break;
-  }
-}
-
 // Получение логов с сервера
 function fetchLogs() {
-  // Если бот не запущен, не делаем запрос
-  if (!statusIndicator.classList.contains('active')) {
-    document.getElementById('tradingLogsContent').textContent = 'Бот не запущен. Логи недоступны.';
-    document.getElementById('indicatorsLogsContent').textContent = 'Бот не запущен. Логи недоступны.';
-    document.getElementById('comparisonTableBody').innerHTML = '<tr><td colspan="4" class="text-center">Бот не запущен</td></tr>';
-    return;
-  }
-  
   // Запрос логов бота
   fetch('/api/bot/logs')
     .then(response => response.json())
@@ -2073,7 +1825,18 @@ function fetchLogs() {
     });
   
   // Запрос данных для сравнения индикаторов
-  fetchComparisonData();
+  fetch('/api/bot/indicators/comparison')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        updateComparisonTable(data.comparison);
+      } else {
+        console.error('Ошибка при получении данных сравнения:', data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Ошибка при получении данных сравнения:', error);
+    });
 }
 
 // Обновление логов
@@ -2126,53 +1889,6 @@ function updateLogs(logs) {
   // Прокручиваем до последней записи
   tradingLogsElement.scrollTop = tradingLogsElement.scrollHeight;
   indicatorsLogsElement.scrollTop = indicatorsLogsElement.scrollHeight;
-}
-
-// Добавление записи в локальные логи (для обновления без перезагрузки с сервера)
-function addLogEntry(message, category = 'trading', level = 'info') {
-  const timestamp = new Date().toLocaleTimeString();
-  let logElement;
-  
-  if (category === 'trading') {
-    logElement = document.getElementById('tradingLogsContent');
-  } else if (category === 'indicators') {
-    logElement = document.getElementById('indicatorsLogsContent');
-  } else {
-    return;
-  }
-  
-  // Определяем класс в зависимости от уровня
-  let logClass = '';
-  if (level === 'error') logClass = 'error';
-  else if (level === 'warning') logClass = 'warning';
-  else if (level === 'success') logClass = 'success';
-  
-  // Добавляем новую запись
-  const logEntry = document.createElement('div');
-  logEntry.className = `log-entry ${logClass}`;
-  logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
-  
-  // Добавляем в соответствующий лог
-  logElement.appendChild(logEntry);
-  
-  // Прокручиваем вниз
-  logElement.scrollTop = logElement.scrollHeight;
-}
-
-// Получение данных для сравнения индикаторов
-function fetchComparisonData() {
-  fetch('/api/bot/indicators/comparison')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        updateComparisonTable(data.comparison);
-      } else {
-        console.error('Ошибка при получении данных сравнения:', data.message);
-      }
-    })
-    .catch(error => {
-      console.error('Ошибка при получении данных сравнения:', error);
-    });
 }
 
 // Обновление таблицы сравнения индикаторов
@@ -2271,6 +1987,42 @@ function updateComparisonTable(comparisonData) {
     `;
   }
   
+  // Обработка PAC
+  if (comparisonData.pac) {
+    const upperPac = comparisonData.pac.upper.toFixed(2);
+    const centerPac = comparisonData.pac.center.toFixed(2);
+    const lowerPac = comparisonData.pac.lower.toFixed(2);
+    const currentPrice = comparisonData.pac.price.toFixed(2);
+    let statusClass = 'indicator-status-neutral';
+    let statusText = 'Нейтрально';
+    
+    if (comparisonData.pac.status === 'buy' || comparisonData.pac.status === 'buy_weak') {
+      statusClass = 'indicator-status-ok';
+      statusText = 'Покупка ✓';
+    } else if (comparisonData.pac.status === 'sell' || comparisonData.pac.status === 'sell_weak') {
+      statusClass = 'indicator-status-ok';
+      statusText = 'Продажа ✓';
+    } else if (comparisonData.pac.status === 'not_ready') {
+      statusClass = 'indicator-status-not-ok';
+      statusText = 'Не готов ✗';
+    }
+    
+    // Если обнаружен pullback, выделяем это
+    if (comparisonData.pac.pullbackDetected) {
+      statusClass = 'indicator-status-ok';
+      statusText = comparisonData.pac.status === 'buy' ? 'PULLBACK UP ✓✓' : 'PULLBACK DOWN ✓✓';
+    }
+    
+    tableContent += `
+      <tr>
+        <td>Price Action Channel</td>
+        <td>Цена: ${currentPrice}</td>
+        <td>Верхняя: ${upperPac}, Центр: ${centerPac}, Нижняя: ${lowerPac}</td>
+        <td class="${statusClass}">${statusText}</td>
+      </tr>
+    `;
+  }
+  
   // Обработка ADX
   if (comparisonData.adx) {
     const adxValue = comparisonData.adx.value.toFixed(2);
@@ -2339,7 +2091,8 @@ function updateComparisonTable(comparisonData) {
     tableContent += `
       <tr class="table-active">
         <td><strong>ИТОГОВЫЙ СИГНАЛ</strong></td>
-        <td colspan="2">${comparisonData.finalSignal.message}</td>
+        <td>Уверенность: LONG ${comparisonData.finalSignal.longScore.toFixed(1)}%, SHORT ${comparisonData.finalSignal.shortScore.toFixed(1)}%</td>
+        <td>${comparisonData.finalSignal.message}</td>
         <td class="${statusClass}"><strong>${statusText}</strong></td>
       </tr>
     `;
@@ -2348,165 +2101,59 @@ function updateComparisonTable(comparisonData) {
   tableBody.innerHTML = tableContent;
 }
 
-// Сохранение расширенных настроек индикаторов
-function saveIndicatorSettings() {
-  const indicatorSettings = {
-    rsi: {
-      enabled: document.getElementById('rsiEnabledCheck').checked,
-      period: parseInt(document.getElementById('rsiPeriodInput').value),
-      overbought: parseInt(document.getElementById('rsiOverboughtInput').value),
-      oversold: parseInt(document.getElementById('rsiOversoldInput').value)
-    },
-    ema: {
-      enabled: document.getElementById('emaEnabledCheck').checked,
-      fastPeriod: parseInt(document.getElementById('emaFastInput').value),
-      mediumPeriod: parseInt(document.getElementById('emaMediumInput').value),
-      slowPeriod: parseInt(document.getElementById('emaSlowInput').value)
-    },
-    bollingerBands: {
-      enabled: document.getElementById('bbEnabledCheck').checked,
-      period: parseInt(document.getElementById('bbPeriodInput').value),
-      deviation: parseFloat(document.getElementById('bbDeviationInput').value),
-      strategy: document.getElementById('bbStrategySelect').value
-    },
-    filters: {
-      adx: {
-        enabled: document.getElementById('adxEnabledCheck').checked,
-        minValue: parseInt(document.getElementById('adxMinValueInput').value)
-      },
-      volume: {
-        enabled: document.getElementById('volumeEnabledCheck').checked,
-        minimumVolume: parseFloat(document.getElementById('volumeMinInput').value)
-      },
-      indicatorsCombination: document.getElementById('indicatorsCombinationSelect').value
-    }
-  };
-  
-  // Добавляем настройки в обычный запрос сохранения
-  const advancedSettings = {
-    takeProfitPercentage: parseFloat(document.getElementById('tpInput').value),
-    stopLossPercentage: parseFloat(document.getElementById('slInput').value),
-    maxTradeDurationMinutes: parseInt(document.getElementById('maxDurationInput').value),
-    trailingStop: {
-      enabled: document.getElementById('trailingStopCheck').checked,
-      activationPercentage: parseFloat(document.getElementById('tsActivationInput').value),
-      stopDistance: parseFloat(document.getElementById('tsDistanceInput').value)
-    },
-    riskManagement: {
-      dailyLossLimit: parseInt(document.getElementById('dailyLossLimitInput').value),
-      maxOpenPositions: parseInt(document.getElementById('maxPositionsInput').value)
-    },
-    dca: {
-      maxOrders: parseInt(document.getElementById('dcaMaxOrdersInput').value)
-    },
-    entries: indicatorSettings
-  };
-  
-  // Добавляем запись в лог
-  addLogEntry('Сохранение расширенных настроек индикаторов...', 'indicators');
-  
-  // Отправляем на сервер
-  fetch('/api/bot/config/indicators', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ indicators: indicatorSettings, advancedSettings: advancedSettings })
-  })
-    .then(response => response.json())
-    .then(result => {
-      if (result.success) {
-        addLogEntry('Настройки индикаторов успешно сохранены!', 'indicators', 'success');
-      } else {
-        addLogEntry(`Ошибка при сохранении настроек: ${result.message}`, 'indicators', 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Ошибка при сохранении настроек индикаторов:', error);
-      addLogEntry(`Ошибка при сохранении настроек: ${error.message}`, 'indicators', 'error');
-    });
+// Отображение уведомления
+function showNotification(title, message) {
+  try {
+    notificationTitle.textContent = title;
+    notificationBody.textContent = message;
+    notificationModal.show();
+  } catch (error) {
+    console.error('Ошибка при отображении уведомления:', error);
+    alert(`${title}: ${message}`);
+  }
 }
 
-// Дополнительная обработка для socket.io событий от сервера
-socket.on('log_update', (logData) => {
-  addLogEntry(logData.message, logData.category, logData.level);
-});
-
-socket.on('indicator_update', (indicatorData) => {
-  updateComparisonTable(indicatorData);
+// Обработка Socket.IO событий для одиночного бота
+socket.on('bot_update', (status) => {
+  try {
+    updateBotStatus(status);
+  } catch (error) {
+    console.error('Ошибка при обработке обновления от сервера:', error);
+  }
 });
 
 // Обработка Socket.IO событий для менеджера ботов
 socket.on('manager_status_update', (status) => {
-  updateManagerStatus(status);
-});
-
-socket.on('manager_log', (logEntry) => {
-  // Добавляем запись в логи менеджера
-  const logElement = document.getElementById('managerLogsContent');
-  const timeString = new Date(logEntry.timestamp).toLocaleTimeString();
-  let logClass = '';
-  
-  if (logEntry.level === 'error') logClass = 'error';
-  else if (logEntry.level === 'warning') logClass = 'warning';
-  else if (logEntry.level === 'success') logClass = 'success';
-  
-  const logHtml = `<div class="log-entry ${logClass}">` +
-    `<span class="timestamp">[${timeString}]</span> ${logEntry.message}</div>`;
-  
-  // Добавляем в начало, чтобы новые логи были сверху
-  if (logElement.innerHTML === 'Ожидание логов менеджера...') {
-    logElement.innerHTML = logHtml;
-  } else {
-    logElement.innerHTML = logHtml + logElement.innerHTML;
-  }
-});
-
-socket.on('scanner_log', (logEntry) => {
-  // Добавляем запись в логи сканера
-  const logElement = document.getElementById('scannerLogsContent');
-  const timeString = new Date(logEntry.timestamp).toLocaleTimeString();
-  let logClass = '';
-  
-  if (logEntry.level === 'error') logClass = 'error';
-  else if (logEntry.level === 'warning') logClass = 'warning';
-  else if (logEntry.level === 'success') logClass = 'success';
-  
-  const logHtml = `<div class="log-entry ${logClass}">` +
-    `<span class="timestamp">[${timeString}]</span> ${logEntry.message}</div>`;
-  
-  // Добавляем в начало, чтобы новые логи были сверху
-  if (logElement.innerHTML === 'Ожидание логов сканера...') {
-    logElement.innerHTML = logHtml;
-  } else {
-    logElement.innerHTML = logHtml + logElement.innerHTML;
+  try {
+    updateManagerStatus(status);
+  } catch (error) {
+    console.error('Ошибка при обработке обновления от менеджера:', error);
   }
 });
 
 socket.on('pairs_updated', (pairs) => {
-  if (pairs && pairs.length > 0) {
-    managerPairs = pairs;
-    updatePairsTable(pairs);
-    filteredPairsCount.textContent = pairs.length;
+  try {
+    updatePairsDisplay(pairs);
+  } catch (error) {
+    console.error('Ошибка при обработке обновления списка пар:', error);
   }
 });
 
-// Обработка Socket.IO событий
-socket.on('bot_update', (status) => {
+socket.on('manager_log', (logEntry) => {
   try {
-    // Проверяем, это обновление от менеджера ботов или от одиночного бота
-    if (status.botId) {
-      // Обновление от менеджера ботов
-      if (managerBots[status.botId]) {
-        managerBots[status.botId].botStatus = status.status;
-        updateBotsTable(managerBots);
-      }
-    } else {
-      // Обновление от одиночного бота
-      updateBotStatus(status);
-    }
+    // Обновляем логи менеджера
+    fetchManagerLogs();
   } catch (error) {
-    console.error('Ошибка при обработке обновления от сервера:', error);
+    console.error('Ошибка при обработке лога менеджера:', error);
+  }
+});
+
+socket.on('scanner_log', (logEntry) => {
+  try {
+    // Обновляем логи сканера
+    fetchScannerLogs();
+  } catch (error) {
+    console.error('Ошибка при обработке лога сканера:', error);
   }
 });
 
@@ -2517,6 +2164,26 @@ socket.on('connect_error', (error) => {
 
 socket.on('error', (error) => {
   console.error('Socket.IO ошибка:', error);
+});
+
+// Обработчик события обновления логов
+socket.on('log_update', (logEntry) => {
+  // Получаем текущие логи
+  fetch('/api/bot/logs')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        updateLogs(data.logs);
+      }
+    })
+    .catch(error => {
+      console.error('Ошибка при получении логов после события:', error);
+    });
+});
+
+// Обработчик события обновления индикаторов
+socket.on('indicator_update', (indicatorData) => {
+  updateComparisonTable(indicatorData);
 });
 
 // Обновляем время работы бота каждую секунду, если бот запущен

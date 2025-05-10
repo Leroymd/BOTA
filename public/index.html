@@ -26,730 +26,880 @@
     </nav>
 
     <div class="container-fluid mt-4">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0">Управление</h5>
+        <!-- Добавляем навигационные вкладки -->
+        <ul class="nav nav-tabs" id="nav-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="main-tab" data-bs-toggle="tab" data-bs-target="#main-content" type="button" role="tab">Основной бот</button>
+            </li>
+            <!-- Добавляем вкладку мультибота -->
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="multibot-tab" data-bs-toggle="tab" data-bs-target="#multibot-content" type="button" role="tab">Мультибот</button>
+            </li>
+        </ul>
+        
+        <!-- Контент вкладок -->
+        <div class="tab-content" id="nav-tabContent">
+            <!-- Основная вкладка (контент существующего бота) -->
+            <div class="tab-pane fade show active" id="main-content" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0">Управление</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" id="startBtn">
+                                        <i class="bi bi-play-fill"></i> Запустить бота
+                                    </button>
+                                    <button class="btn btn-danger" id="stopBtn" disabled>
+                                        <i class="bi bi-stop-fill"></i> Остановить бота
+                                    </button>
+                                </div>
+                                <hr>
+                                <div class="mb-3">
+                                    <label class="form-label">Стратегия:</label>
+                                    <select class="form-select" id="strategySelect">
+                                        <option value="SCALPING">Scalping</option>
+                                        <option value="DCA">DCA</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Торговая пара:</label>
+                                    <select class="form-select" id="symbolSelect">
+                                        <option value="SOLUSDT">SOLUSDT</option>
+                                        <option value="BTCUSDT">BTCUSDT</option>
+                                        <option value="ETHUSDT">ETHUSDT</option>
+                                        <option value="BNBUSDT">BNBUSDT</option>
+                                        <option value="ADAUSDT">ADAUSDT</option>
+                                        <option value="DOGEUSDT">DOGEUSDT</option>
+                                        <option value="XRPUSDT">XRPUSDT</option>
+                                        <option value="DOTUSDT">DOTUSDT</option>
+                                        <option value="LINKUSDT">LINKUSDT</option>
+                                        <option value="UNIUSDT">UNIUSDT</option>
+                                        <option value="LTCUSDT">LTCUSDT</option>
+                                        <option value="AVAXUSDT">AVAXUSDT</option>
+                                        <option value="MATICUSDT">MATICUSDT</option>
+                                    </select>
+                                </div>
+                                <hr>
+                                <div class="mb-3">
+                                    <label class="form-label">Плечо:</label>
+                                    <input type="number" class="form-control" id="leverageInput" min="1" max="20" value="8">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Размер позиции (% от баланса):</label>
+                                    <input type="number" class="form-control" id="positionSizeInput" min="5" max="100" value="30">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Реинвестирование (%):</label>
+                                    <input type="number" class="form-control" id="reinvestmentInput" min="0" max="100" value="100">
+                                    <div class="form-text">100% - полное реинвестирование, 0% - торговля только начальным депозитом</div>
+                                </div>
+                                <hr>
+                                <button class="btn btn-primary w-100" id="saveSettingsBtn">
+                                    <i class="bi bi-save"></i> Сохранить настройки
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card mt-3">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0">API BitGet</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">API Key:</label>
+                                    <input type="text" class="form-control" id="apiKeyInput">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">API Secret:</label>
+                                    <input type="password" class="form-control" id="apiSecretInput">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">API Passphrase:</label>
+                                    <input type="password" class="form-control" id="apiPassphraseInput">
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="demoModeCheck">
+                                    <label class="form-check-label" for="demoModeCheck">
+                                        Демо-режим (тестовая торговля)
+                                    </label>
+                                </div>
+                                <button class="btn btn-primary w-100" id="saveApiBtn">
+                                    <i class="bi bi-key"></i> Сохранить API ключи
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-success" id="startBtn">
-                                <i class="bi bi-play-fill"></i> Запустить бота
-                            </button>
-                            <button class="btn btn-danger" id="stopBtn" disabled>
-                                <i class="bi bi-stop-fill"></i> Остановить бота
-                            </button>
+                    <div class="col-md-9">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">Баланс</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <h2 class="text-center" id="balanceText">0.00 USDT</h2>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="alert alert-success mb-0">
+                                                    <div class="small">Дневная прибыль:</div>
+                                                    <div id="dailyProfitText">0.00%</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="alert alert-primary mb-0">
+                                                    <div class="small">Общая прибыль:</div>
+                                                    <div id="totalProfitText">0.00%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">Текущая цена</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <h2 class="text-center" id="currentPriceText">0.00 USDT</h2>
+                                        <div class="mt-2">
+                                            <div class="alert alert-info mb-0">
+                                                <div class="small">Индикаторы:</div>
+                                                <div>RSI: <span id="rsiText">-</span></div>
+                                                <div>
+                                                    EMA: <span id="emaText">-</span>
+                                                    <i class="bi bi-arrow-up text-success d-none" id="emaUpIcon"></i>
+                                                    <i class="bi bi-arrow-down text-danger d-none" id="emaDownIcon"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">Статистика</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="stats-row">
+                                            <div>Всего сделок:</div>
+                                            <div id="totalTradesText">0</div>
+                                        </div>
+                                        <div class="stats-row">
+                                            <div>Побед / Поражений:</div>
+                                            <div id="winLossText">0 / 0</div>
+                                        </div>
+                                        <div class="stats-row">
+                                            <div>Винрейт:</div>
+                                            <div id="winRateStatsText">0.00%</div>
+                                        </div>
+                                        <div class="stats-row">
+                                            <div>Фактор прибыли:</div>
+                                            <div id="profitFactorText">0.00</div>
+                                        </div>
+                                        <div class="stats-row">
+                                            <div>Время работы:</div>
+                                            <div id="uptimeText">00:00:00</div>
+                                        </div>
+                                        <div class="stats-row">
+                                            <div>Реинвестирование:</div>
+                                            <div id="reinvestmentStatusText">100%</div>
+                                        </div>
+                                        <div class="stats-row">
+                                            <div>Выведено прибыли:</div>
+                                            <div id="withdrawnProfitText">0.00 USDT</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <hr>
-                        <div class="mb-3">
-                            <label class="form-label">Стратегия:</label>
-                            <select class="form-select" id="strategySelect">
-                                <option value="SCALPING">Scalping</option>
-                                <option value="DCA">DCA</option>
-                            </select>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">График баланса</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="balanceChart" style="height: 300px;"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Торговая пара:</label>
-                            <select class="form-select" id="symbolSelect">
-                                <option value="SOLUSDT">SOLUSDT</option>
-                                <option value="BTCUSDT">BTCUSDT</option>
-                                <option value="ETHUSDT">ETHUSDT</option>
-                                <option value="BNBUSDT">BNBUSDT</option>
-                                <option value="ADAUSDT">ADAUSDT</option>
-                                <option value="DOGEUSDT">DOGEUSDT</option>
-                                <option value="XRPUSDT">XRPUSDT</option>
-                                <option value="DOTUSDT">DOTUSDT</option>
-                                <option value="LINKUSDT">LINKUSDT</option>
-                                <option value="UNIUSDT">UNIUSDT</option>
-                                <option value="LTCUSDT">LTCUSDT</option>
-                                <option value="AVAXUSDT">AVAXUSDT</option>
-                                <option value="MATICUSDT">MATICUSDT</option>
-                            </select>
+
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Торговые логи</h5>
+                                        <div>
+                                            <button class="btn btn-sm btn-outline-light me-2" id="refreshLogsBtn">
+                                                <i class="bi bi-arrow-clockwise"></i> Обновить
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#logsCollapse">
+                                                <i class="bi bi-chevron-down"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="collapse show" id="logsCollapse">
+                                        <div class="card-body p-0">
+                                            <div class="logs-container">
+                                                <div class="log-tabs">
+                                                    <ul class="nav nav-tabs" id="logsTabs" role="tablist">
+                                                        <li class="nav-item" role="presentation">
+                                                            <button class="nav-link active" id="trading-tab" data-bs-toggle="tab" data-bs-target="#trading-logs" type="button" role="tab">Торговля</button>
+                                                        </li>
+                                                        <li class="nav-item" role="presentation">
+                                                            <button class="nav-link" id="indicators-tab" data-bs-toggle="tab" data-bs-target="#indicators-logs" type="button" role="tab">Индикаторы</button>
+                                                        </li>
+                                                        <li class="nav-item" role="presentation">
+                                                            <button class="nav-link" id="comparison-tab" data-bs-toggle="tab" data-bs-target="#comparison-logs" type="button" role="tab">Анализ условий</button>
+                                                        </li>
+                                                    </ul>
+                                                    <div class="tab-content p-2" id="logsTabContent">
+                                                        <div class="tab-pane fade show active" id="trading-logs" role="tabpanel">
+                                                            <pre class="logs-content" id="tradingLogsContent">Ожидание логов торговли...</pre>
+                                                        </div>
+                                                        <div class="tab-pane fade" id="indicators-logs" role="tabpanel">
+                                                            <pre class="logs-content" id="indicatorsLogsContent">Ожидание логов индикаторов...</pre>
+                                                        </div>
+                                                        <div class="tab-pane fade" id="comparison-logs" role="tabpanel">
+                                                            <div class="comparison-container" id="comparisonContainer">
+                                                                <table class="table table-sm table-striped table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Индикатор</th>
+                                                                            <th>Текущее значение</th>
+                                                                            <th>Пороговое значение</th>
+                                                                            <th>Статус</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody id="comparisonTableBody">
+                                                                        <tr>
+                                                                            <td colspan="4" class="text-center">Ожидание данных...</td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <hr>
-                        <div class="mb-3">
-                            <label class="form-label">Плечо:</label>
-                            <input type="number" class="form-control" id="leverageInput" min="1" max="20" value="8">
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">Открытые позиции</h5>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <table class="table table-striped mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Тип</th>
+                                                    <th>Вход</th>
+                                                    <th>Размер</th>
+                                                    <th>P&L</th>
+                                                    <th>Уверенность</th>
+                                                    <th>Действия</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="openPositionsTable">
+                                                <tr>
+                                                    <td colspan="6" class="text-center">Нет открытых позиций</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">Последние сделки</h5>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <table class="table table-striped mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Тип</th>
+                                                    <th>Вход</th>
+                                                    <th>Выход</th>
+                                                    <th>P&L</th>
+                                                    <th>Уверенность</th>
+                                                    <th>Результат</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="lastTradesTable">
+                                                <tr>
+                                                    <td colspan="6" class="text-center">Нет данных о сделках</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Размер позиции (% от баланса):</label>
-                            <input type="number" class="form-control" id="positionSizeInput" min="5" max="100" value="30">
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Расширенные настройки</h5>
+                                        <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#advancedSettingsCollapse">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                    <div class="collapse" id="advancedSettingsCollapse">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6>Параметры входа/выхода</h6>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Тейк-профит (%):</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="tpInput" min="0.1" max="5" step="0.1" value="0.3">
+                                                            <div class="input-group-append">
+                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Процент прибыли для автоматического закрытия позиции. Увеличение значения повысит потенциальную прибыль, но снизит винрейт.">
+                                                                    <i class="bi bi-info-circle"></i>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Стоп-лосс (%):</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="slInput" min="0.1" max="5" step="0.1" value="0.2">
+                                                            <div class="input-group-append">
+                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Процент убытка, при котором позиция будет автоматически закрыта. Уменьшение значения снизит риск, но может увеличить количество убыточных сделок.">
+                                                                    <i class="bi bi-info-circle"></i>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Макс. длительность сделки (мин):</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="maxDurationInput" min="1" max="60" value="5">
+                                                            <div class="input-group-append">
+                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Максимальное время, которое позиция может оставаться открытой. Уменьшение значения снизит риск, но может привести к преждевременному закрытию потенциально прибыльных сделок.">
+                                                                    <i class="bi bi-info-circle"></i>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="trailingStopCheck" checked>
+                                                        <label class="form-check-label" for="trailingStopCheck">
+                                                            Использовать трейлинг-стоп
+                                                            <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Трейлинг-стоп следует за ценой, позволяя максимизировать прибыль при благоприятном движении рынка, одновременно ограничивая убытки."></i>
+                                                        </label>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Активация трейлинг-стопа (%):</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="tsActivationInput" min="0.1" max="1" step="0.05" value="0.15">
+                                                            <div class="input-group-append">
+                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Процент прибыли, при котором активируется трейлинг-стоп. Уменьшение значения приведет к более раннему включению защиты прибыли.">
+                                                                    <i class="bi bi-info-circle"></i>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Дистанция трейлинг-стопа (%):</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="tsDistanceInput" min="0.05" max="1" step="0.05" value="0.1">
+                                                            <div class="input-group-append">
+                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Расстояние между текущей ценой и ценой трейлинг-стопа. Уменьшение значения обеспечит более плотное следование за ценой, но может привести к преждевременному закрытию.">
+                                                                    <i class="bi bi-info-circle"></i>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Частичное закрытие позиций -->
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Частичное закрытие позиций:</label>
+                                                        <div class="form-check mb-2">
+                                                            <input class="form-check-input" type="checkbox" id="partialCloseCheck">
+                                                            <label class="form-check-label" for="partialCloseCheck">
+                                                                Включить частичное закрытие
+                                                            </label>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-6">
+                                                                <label class="form-label small">Первый уровень (%):</label>
+                                                                <input type="number" class="form-control form-control-sm" id="partialClose1Input" min="0.1" max="5" step="0.1" value="0.15">
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <label class="form-label small">Закрыть (%):</label>
+                                                                <input type="number" class="form-control form-control-sm" id="partialCloseAmount1Input" min="10" max="90" step="5" value="30">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row mt-2">
+                                                            <div class="col-6">
+                                                                <label class="form-label small">Второй уровень (%):</label>
+                                                                <input type="number" class="form-control form-control-sm" id="partialClose2Input" min="0.1" max="5" step="0.1" value="0.25">
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <label class="form-label small">Закрыть (%):</label>
+                                                                <input type="number" class="form-control form-control-sm" id="partialCloseAmount2Input" min="10" max="90" step="5" value="50">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6>Риск-менеджмент</h6>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Дневной лимит убытков (%):</label>
+                                                        <input type="number" class="form-control" id="dailyLossLimitInput" min="1" max="50" value="10">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Макс. количество открытых позиций:</label>
+                                                        <input type="number" class="form-control" id="maxPositionsInput" min="1" max="10" value="1">
+                                                    </div>
+                                                    
+                                                    <!-- Индикаторы: условие или рекомендация -->
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Использование индикаторов:</label>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="indicatorsMode" id="indicatorsAsRecommendationRadio" value="recommendation" checked>
+                                                            <label class="form-check-label" for="indicatorsAsRecommendationRadio">
+                                                                Как рекомендация
+                                                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Сигналы индикаторов считаются рекомендацией. Бот примет решение на основе уровня уверенности."></i>
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="indicatorsMode" id="indicatorsAsRequirementRadio" value="requirement">
+                                                            <label class="form-check-label" for="indicatorsAsRequirementRadio">
+                                                                Как обязательное условие
+                                                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Сделка будет открыта только при полном выполнении всех условий по индикаторам."></i>
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-text">Минимальный порог уверенности для входа:</div>
+                                                        <div class="d-flex align-items-center">
+                                                            <input type="range" class="form-range me-2" id="confidenceThresholdRange" min="50" max="90" step="5" value="60">
+                                                            <span id="confidenceThresholdValue">60%</span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <h6 class="mt-4">Параметры DCA (для стратегии DCA)</h6>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Максимальное количество DCA ордеров:</label>
+                                                        <input type="number" class="form-control" id="dcaMaxOrdersInput" min="1" max="5" value="3">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Шаг цены для DCA (%):</label>
+                                                        <input type="number" class="form-control" id="dcaPriceStepInput" min="0.5" max="5" step="0.1" value="1.5">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Множитель размера DCA:</label>
+                                                        <input type="number" class="form-control" id="dcaMultiplierInput" min="1" max="3" step="0.1" value="1.5">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <h6 class="mt-4">Настройки индикаторов</h6>
+                                            <div class="row">
+                                                <!-- RSI настройки -->
+                                                <div class="col-md-4">
+                                                    <div class="card mb-3">
+                                                        <div class="card-header bg-light">
+                                                            <strong>RSI</strong>
+                                                            <div class="form-check form-switch float-end">
+                                                                <input class="form-check-input" type="checkbox" id="rsiEnabledCheck" checked>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Период:</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" id="rsiPeriodInput" min="5" max="30" value="14">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период расчета RSI. Меньшее значение дает более быструю реакцию на изменения цены, но больше ложных сигналов.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Зона перекупленности:</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" id="rsiOverboughtInput" min="60" max="90" value="70">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Значение RSI, выше которого считается сигналом на SHORT. Уменьшение значения даст больше сигналов, но снизит их качество.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Зона перепроданности:</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" id="rsiOversoldInput" min="10" max="40" value="30">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Значение RSI, ниже которого считается сигналом на LONG. Увеличение значения даст больше сигналов, но снизит их качество.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- EMA настройки -->
+                                                <div class="col-md-4">
+                                                    <div class="card mb-3">
+                                                        <div class="card-header bg-light">
+                                                            <strong>EMA</strong>
+                                                            <div class="form-check form-switch float-end">
+                                                                <input class="form-check-input" type="checkbox" id="emaEnabledCheck" checked>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Быстрая EMA:</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" id="emaFastInput" min="5" max="50" value="20">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период быстрой EMA. Меньшее значение дает более быструю реакцию на изменения тренда.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Средняя EMA:</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" id="emaMediumInput" min="20" max="100" value="50">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период средней EMA для определения среднесрочного тренда.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Медленная EMA:</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" id="emaSlowInput" min="50" max="200" value="100">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период медленной EMA для подтверждения долгосрочного тренда. Сигнал считается сильным, когда все три EMA выстроены в одном направлении.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Bollinger Bands настройки -->
+                                                <div class="col-md-4">
+                                                    <div class="card mb-3">
+                                                        <div class="card-header bg-light">
+                                                            <strong>Bollinger Bands</strong>
+                                                            <div class="form-check form-switch float-end">
+                                                                <input class="form-check-input" type="checkbox" id="bbEnabledCheck" checked>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Период:</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" id="bbPeriodInput" min="10" max="50" value="20">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период расчета Bollinger Bands. Определяет, насколько быстро полосы реагируют на изменения цены.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Отклонение:</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" id="bbDeviationInput" min="1" max="3" step="0.1" value="2">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Множитель стандартного отклонения для верхней и нижней полос. Увеличение значения расширяет диапазон и уменьшает количество сигналов.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Стратегия:</label>
+                                                                <select class="form-select form-select-sm" id="bbStrategySelect">
+                                                                    <option value="bounce">Отскок от границ</option>
+                                                                    <option value="breakout">Пробой границ</option>
+                                                                    <option value="squeeze">Сжатие полос</option>
+                                                                </select>
+                                                                <small class="form-text text-muted">Стратегия использования Bollinger Bands для генерации сигналов.</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Фильтры и дополнительные настройки -->
+                                            <div class="row mt-2">
+                                                <div class="col-md-6">
+                                                    <div class="card mb-3">
+                                                        <div class="card-header bg-light">
+                                                            <strong>Фильтры сигналов</strong>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="mb-2">
+                                                                <label class="form-label">ADX (сила тренда):</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <div class="input-group-prepend">
+                                                                        <div class="input-group-text">
+                                                                            <input type="checkbox" id="adxEnabledCheck" checked>
+                                                                        </div>
+                                                                    </div>
+                                                                    <input type="number" class="form-control" id="adxMinValueInput" min="10" max="50" value="20">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Минимальное значение ADX для открытия позиции. ADX > 20 указывает на наличие тренда, ADX > 40 на сильный тренд.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Объем торгов:</label>
+                                                                <div class="input-group input-group-sm">
+                                                                    <div class="input-group-prepend">
+                                                                        <div class="input-group-text">
+                                                                            <input type="checkbox" id="volumeEnabledCheck" checked>
+                                                                        </div>
+                                                                    </div>
+                                                                    <input type="number" class="form-control" id="volumeMinInput" min="0.2" max="2" step="0.1" value="0.5">
+                                                                    <div class="input-group-append">
+                                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Минимальный относительный объем торгов (по отношению к среднему объему). Значение >1 требует объем выше среднего.">
+                                                                            <i class="bi bi-info-circle"></i>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Комбинация индикаторов:</label>
+                                                                <select class="form-select form-select-sm" id="indicatorsCombinationSelect">
+                                                                    <option value="any">Любой индикатор (ИЛИ)</option>
+                                                                    <option value="majority">Большинство индикаторов</option>
+                                                                    <option value="all" selected>Все индикаторы (И)</option>
+                                                                </select>
+                                                                <small class="form-text text-muted">Логика комбинирования сигналов от разных индикаторов.</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="card mb-3">
+                                                        <div class="card-header bg-light">
+                                                            <strong>Настройки стратегии</strong>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="mb-2">
+                                                                <label class="form-label">Агрессивность стратегии:</label>
+                                                                <div class="input-group">
+                                                                    <input type="range" class="form-range" id="strategyAggressivenessRange" min="1" max="5" value="3">
+                                                                </div>
+                                                                <div class="d-flex justify-content-between">
+                                                                    <small>Консервативно</small>
+                                                                    <small>Нейтрально</small>
+                                                                    <small>Агрессивно</small>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Настройки для стратегии Scalping -->
+                                                            <div id="scalpingSettings">
+                                                                <div class="mb-2 mt-3">
+                                                                    <label class="form-label">Реакция на микро-тренды:</label>
+                                                                    <div class="form-check">
+                                                                        <input class="form-check-input" type="checkbox" id="fastReactionCheck" checked>
+                                                                        <label class="form-check-label" for="fastReactionCheck">
+                                                                            Быстрая реакция на микро-тренды
+                                                                            <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Включает использование более коротких периодов для индикаторов, что повышает скорость реакции на кратковременные изменения цены."></i>
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mb-2">
+                                                                    <label class="form-label">Scalping режим:</label>
+                                                                    <select class="form-select form-select-sm" id="scalpingModeSelect">
+                                                                        <option value="standard">Стандартный</option>
+                                                                        <option value="ultra">Ультра-скальпинг</option>
+                                                                        <option value="safe">Безопасный</option>
+                                                                    </select>
+                                                                    <small class="form-text text-muted">Предустановки для разных типов скальпинга.</small>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Настройки для стратегии DCA -->
+                                                            <div id="dcaSettings" style="display:none;">
+                                                                <div class="mb-2 mt-3">
+                                                                    <label class="form-label">Стратегия усреднения:</label>
+                                                                    <select class="form-select form-select-sm" id="dcaStrategySelect">
+                                                                        <option value="standard">Стандартная</option>
+                                                                        <option value="aggressive">Агрессивная</option>
+                                                                        <option value="safe">Консервативная</option>
+                                                                    </select>
+                                                                    <small class="form-text text-muted">Предустановки для разных типов усреднения.</small>
+                                                                </div>
+                                                                <div class="mb-2">
+                                                                    <label class="form-label">Максимальное количество DCA ордеров:</label>
+                                                                    <input type="number" class="form-control form-control-sm" id="dcaMaxOrdersInput2" min="1" max="10" value="3">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-grid">
+                                                <button class="btn btn-primary" id="saveAdvancedSettingsBtn">
+                                                    <i class="bi bi-save"></i> Сохранить расширенные настройки
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Реинвестирование (%):</label>
-                            <input type="number" class="form-control" id="reinvestmentInput" min="0" max="100" value="100">
-                            <div class="form-text">100% - полное реинвестирование, 0% - торговля только начальным депозитом</div>
-                        </div>
-                        <hr>
-                        <button class="btn btn-primary w-100" id="saveSettingsBtn">
-                            <i class="bi bi-save"></i> Сохранить настройки
-                        </button>
-                    </div>
-                </div>
-                <div class="card mt-3">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0">API BitGet</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">API Key:</label>
-                            <input type="text" class="form-control" id="apiKeyInput">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">API Secret:</label>
-                            <input type="password" class="form-control" id="apiSecretInput">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">API Passphrase:</label>
-                            <input type="password" class="form-control" id="apiPassphraseInput">
-                        </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="demoModeCheck">
-                            <label class="form-check-label" for="demoModeCheck">
-                                Демо-режим (тестовая торговля)
-                            </label>
-                        </div>
-                        <button class="btn btn-primary w-100" id="saveApiBtn">
-                            <i class="bi bi-key"></i> Сохранить API ключи
-                        </button>
                     </div>
                 </div>
             </div>
-            <div class="col-md-9">
+            
+            <!-- Вкладка мультибота -->
+            <div class="tab-pane fade" id="multibot-content" role="tabpanel">
                 <div class="row">
                     <div class="col-md-4">
-                        <div class="card">
+                        <div class="card mb-3">
                             <div class="card-header bg-dark text-white">
-                                <h5 class="mb-0">Баланс</h5>
+                                <h5 class="mb-0">Управление менеджером</h5>
                             </div>
                             <div class="card-body">
-                                <h2 class="text-center" id="balanceText">0.00 USDT</h2>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <div class="alert alert-success mb-0">
-                                            <div class="small">Дневная прибыль:</div>
-                                            <div id="dailyProfitText">0.00%</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="alert alert-primary mb-0">
-                                            <div class="small">Общая прибыль:</div>
-                                            <div id="totalProfitText">0.00%</div>
-                                        </div>
-                                    </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Количество ботов:</label>
+                                    <input type="number" class="form-control" id="botCountInput" min="1" max="5" value="1">
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header bg-dark text-white">
-                                <h5 class="mb-0">Текущая цена</h5>
-                            </div>
-                            <div class="card-body">
-                                <h2 class="text-center" id="currentPriceText">0.00 USDT</h2>
-                                <div class="mt-2">
-                                    <div class="alert alert-info mb-0">
-                                        <div class="small">Индикаторы:</div>
-                                        <div>RSI: <span id="rsiText">-</span></div>
-                                        <div>
-                                            EMA: <span id="emaText">-</span>
-                                            <i class="bi bi-arrow-up text-success d-none" id="emaUpIcon"></i>
-                                            <i class="bi bi-arrow-down text-danger d-none" id="emaDownIcon"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header bg-dark text-white">
-                                <h5 class="mb-0">Статистика</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="stats-row">
-                                    <div>Всего сделок:</div>
-                                    <div id="totalTradesText">0</div>
-                                </div>
-                                <div class="stats-row">
-                                    <div>Побед / Поражений:</div>
-                                    <div id="winLossText">0 / 0</div>
-                                </div>
-                                <div class="stats-row">
-                                    <div>Винрейт:</div>
-                                    <div id="winRateStatsText">0.00%</div>
-                                </div>
-                                <div class="stats-row">
-                                    <div>Фактор прибыли:</div>
-                                    <div id="profitFactorText">0.00</div>
-                                </div>
-                                <div class="stats-row">
-                                    <div>Время работы:</div>
-                                    <div id="uptimeText">00:00:00</div>
-                                </div>
-                                <div class="stats-row">
-                                    <div>Реинвестирование:</div>
-                                    <div id="reinvestmentStatusText">100%</div>
-                                </div>
-                                <div class="stats-row">
-                                    <div>Выведено прибыли:</div>
-                                    <div id="withdrawnProfitText">0.00 USDT</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row mt-3">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header bg-dark text-white">
-                                <h5 class="mb-0">График баланса</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="balanceChart" style="height: 300px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mt-3">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Торговые логи</h5>
-                                <div>
-                                    <button class="btn btn-sm btn-outline-light me-2" id="refreshLogsBtn">
-                                        <i class="bi bi-arrow-clockwise"></i> Обновить
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary" id="initializeManagerBtn">
+                                        <i class="bi bi-gear"></i> Инициализировать менеджер
                                     </button>
-                                    <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#logsCollapse">
-                                        <i class="bi bi-chevron-down"></i>
+                                    <button class="btn btn-success" id="startManagerBtn" disabled>
+                                        <i class="bi bi-play-fill"></i> Запустить менеджер
+                                    </button>
+                                    <button class="btn btn-danger" id="stopManagerBtn" disabled>
+                                        <i class="bi bi-stop-fill"></i> Остановить менеджер
+                                    </button>
+                                    <button class="btn btn-warning" id="addBotsBtn" disabled>
+                                        <i class="bi bi-plus-circle"></i> Добавить ботов
                                     </button>
                                 </div>
                             </div>
-                            <div class="collapse show" id="logsCollapse">
-                                <div class="card-body p-0">
-                                    <div class="logs-container">
-                                        <div class="log-tabs">
-                                            <ul class="nav nav-tabs" id="logsTabs" role="tablist">
-                                                <li class="nav-item" role="presentation">
-                                                    <button class="nav-link active" id="trading-tab" data-bs-toggle="tab" data-bs-target="#trading-logs" type="button" role="tab">Торговля</button>
-                                                </li>
-                                                <li class="nav-item" role="presentation">
-                                                    <button class="nav-link" id="indicators-tab" data-bs-toggle="tab" data-bs-target="#indicators-logs" type="button" role="tab">Индикаторы</button>
-                                                </li>
-                                                <li class="nav-item" role="presentation">
-                                                    <button class="nav-link" id="comparison-tab" data-bs-toggle="tab" data-bs-target="#comparison-logs" type="button" role="tab">Анализ условий</button>
-                                                </li>
-                                            </ul>
-                                            <div class="tab-content p-2" id="logsTabContent">
-                                                <div class="tab-pane fade show active" id="trading-logs" role="tabpanel">
-                                                    <pre class="logs-content" id="tradingLogsContent">Ожидание логов торговли...</pre>
-                                                </div>
-                                                <div class="tab-pane fade" id="indicators-logs" role="tabpanel">
-                                                    <pre class="logs-content" id="indicatorsLogsContent">Ожидание логов индикаторов...</pre>
-                                                </div>
-                                                <div class="tab-pane fade" id="comparison-logs" role="tabpanel">
-                                                    <div class="comparison-container" id="comparisonContainer">
-                                                        <table class="table table-sm table-striped table-hover">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Индикатор</th>
-                                                                    <th>Текущее значение</th>
-                                                                    <th>Пороговое значение</th>
-                                                                    <th>Статус</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody id="comparisonTableBody">
-                                                                <tr>
-                                                                    <td colspan="4" class="text-center">Ожидание данных...</td>
-                                                                </tr>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0">Сканер пар</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Анализ пары:</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="analyzeSymbolInput" placeholder="Например: BTCUSDT">
+                                        <button class="btn btn-outline-primary" id="analyzePairBtn" disabled>
+                                            <i class="bi bi-search"></i> Анализировать
+                                        </button>
                                     </div>
+                                </div>
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-success" id="forceScanBtn" disabled>
+                                        <i class="bi bi-search"></i> Сканировать пары
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <div class="card">
+                    
+                    <div class="col-md-8">
+                        <div class="card mb-3">
                             <div class="card-header bg-dark text-white">
-                                <h5 class="mb-0">Открытые позиции</h5>
+                                <h5 class="mb-0">Активные боты</h5>
                             </div>
                             <div class="card-body p-0">
                                 <table class="table table-striped mb-0">
                                     <thead>
                                         <tr>
-                                            <th>Тип</th>
-                                            <th>Вход</th>
-                                            <th>Размер</th>
+                                            <th>ID</th>
+                                            <th>Символ</th>
+                                            <th>Статус</th>
+                                            <th>Баланс</th>
                                             <th>P&L</th>
-                                            <th>Уверенность</th>
+                                            <th>Позиций</th>
                                             <th>Действия</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="openPositionsTable">
+                                    <tbody id="botInstancesTable">
                                         <tr>
-                                            <td colspan="6" class="text-center">Нет открытых позиций</td>
+                                            <td colspan="7" class="text-center">Нет активных ботов</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
+                        
+                        <div class="card mb-3">
                             <div class="card-header bg-dark text-white">
-                                <h5 class="mb-0">Последние сделки</h5>
+                                <h5 class="mb-0">Подходящие торговые пары</h5>
                             </div>
-                            <div class="card-body p-0">
-                                <table class="table table-striped mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Тип</th>
-                                            <th>Вход</th>
-                                            <th>Выход</th>
-                                            <th>P&L</th>
-                                            <th>Уверенность</th>
-                                            <th>Результат</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="lastTradesTable">
-                                        <tr>
-                                            <td colspan="6" class="text-center">Нет данных о сделках</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div class="card-body">
+                                <div id="activePairsContainer">
+                                    <div class="alert alert-info">
+                                        Нет активных торговых пар. Запустите сканирование, чтобы найти подходящие пары.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="row mt-3">
+                <div class="row">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Расширенные настройки</h5>
-                                <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#advancedSettingsCollapse">
+                                <h5 class="mb-0">Логи менеджера и сканера</h5>
+                                <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#multibot-logs-collapse">
                                     <i class="bi bi-chevron-down"></i>
                                 </button>
                             </div>
-                            <div class="collapse" id="advancedSettingsCollapse">
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6>Параметры входа/выхода</h6>
-                                            <div class="mb-3">
-                                                <label class="form-label">Тейк-профит (%):</label>
-                                                <div class="input-group">
-                                                    <input type="number" class="form-control" id="tpInput" min="0.1" max="5" step="0.1" value="0.3">
-                                                    <div class="input-group-append">
-                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Процент прибыли для автоматического закрытия позиции. Увеличение значения повысит потенциальную прибыль, но снизит винрейт.">
-                                                            <i class="bi bi-info-circle"></i>
-                                                        </span>
-                                                    </div>
+                            <div class="collapse show" id="multibot-logs-collapse">
+                                <div class="card-body p-0">
+                                    <div class="logs-container">
+                                        <div class="log-tabs">
+                                            <ul class="nav nav-tabs" id="multibotLogsTabs" role="tablist">
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link active" id="manager-logs-tab" data-bs-toggle="tab" data-bs-target="#manager-logs" type="button" role="tab">Менеджер</button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" id="scanner-logs-tab" data-bs-toggle="tab" data-bs-target="#scanner-logs" type="button" role="tab">Сканер</button>
+                                                </li>
+                                            </ul>
+                                            <div class="tab-content p-2" id="multibotLogsTabContent">
+                                                <div class="tab-pane fade show active" id="manager-logs" role="tabpanel">
+                                                    <pre class="logs-content" id="managerLogsContent">Ожидание логов менеджера...</pre>
                                                 </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Стоп-лосс (%):</label>
-                                                <div class="input-group">
-                                                    <input type="number" class="form-control" id="slInput" min="0.1" max="5" step="0.1" value="0.2">
-                                                    <div class="input-group-append">
-                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Процент убытка, при котором позиция будет автоматически закрыта. Уменьшение значения снизит риск, но может увеличить количество убыточных сделок.">
-                                                            <i class="bi bi-info-circle"></i>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Макс. длительность сделки (мин):</label>
-                                                <div class="input-group">
-                                                    <input type="number" class="form-control" id="maxDurationInput" min="1" max="60" value="5">
-                                                    <div class="input-group-append">
-                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Максимальное время, которое позиция может оставаться открытой. Уменьшение значения снизит риск, но может привести к преждевременному закрытию потенциально прибыльных сделок.">
-                                                            <i class="bi bi-info-circle"></i>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="form-check mb-3">
-                                                <input class="form-check-input" type="checkbox" id="trailingStopCheck" checked>
-                                                <label class="form-check-label" for="trailingStopCheck">
-                                                    Использовать трейлинг-стоп
-                                                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Трейлинг-стоп следует за ценой, позволяя максимизировать прибыль при благоприятном движении рынка, одновременно ограничивая убытки."></i>
-                                                </label>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Активация трейлинг-стопа (%):</label>
-                                                <div class="input-group">
-                                                    <input type="number" class="form-control" id="tsActivationInput" min="0.1" max="1" step="0.05" value="0.15">
-                                                    <div class="input-group-append">
-                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Процент прибыли, при котором активируется трейлинг-стоп. Уменьшение значения приведет к более раннему включению защиты прибыли.">
-                                                            <i class="bi bi-info-circle"></i>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Дистанция трейлинг-стопа (%):</label>
-                                                <div class="input-group">
-                                                    <input type="number" class="form-control" id="tsDistanceInput" min="0.05" max="1" step="0.05" value="0.1">
-                                                    <div class="input-group-append">
-                                                        <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Расстояние между текущей ценой и ценой трейлинг-стопа. Уменьшение значения обеспечит более плотное следование за ценой, но может привести к преждевременному закрытию.">
-                                                            <i class="bi bi-info-circle"></i>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <!-- Частичное закрытие позиций -->
-                                            <div class="mb-3">
-                                                <label class="form-label">Частичное закрытие позиций:</label>
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input" type="checkbox" id="partialCloseCheck">
-                                                    <label class="form-check-label" for="partialCloseCheck">
-                                                        Включить частичное закрытие
-                                                    </label>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-6">
-                                                        <label class="form-label small">Первый уровень (%):</label>
-                                                        <input type="number" class="form-control form-control-sm" id="partialClose1Input" min="0.1" max="5" step="0.1" value="0.15">
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <label class="form-label small">Закрыть (%):</label>
-                                                        <input type="number" class="form-control form-control-sm" id="partialCloseAmount1Input" min="10" max="90" step="5" value="30">
-                                                    </div>
-                                                </div>
-                                                <div class="row mt-2">
-                                                    <div class="col-6">
-                                                        <label class="form-label small">Второй уровень (%):</label>
-                                                        <input type="number" class="form-control form-control-sm" id="partialClose2Input" min="0.1" max="5" step="0.1" value="0.25">
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <label class="form-label small">Закрыть (%):</label>
-                                                        <input type="number" class="form-control form-control-sm" id="partialCloseAmount2Input" min="10" max="90" step="5" value="50">
-                                                    </div>
+                                                <div class="tab-pane fade" id="scanner-logs" role="tabpanel">
+                                                    <pre class="logs-content" id="scannerLogsContent">Ожидание логов сканера...</pre>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6>Риск-менеджмент</h6>
-                                            <div class="mb-3">
-                                                <label class="form-label">Дневной лимит убытков (%):</label>
-                                                <input type="number" class="form-control" id="dailyLossLimitInput" min="1" max="50" value="10">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Макс. количество открытых позиций:</label>
-                                                <input type="number" class="form-control" id="maxPositionsInput" min="1" max="10" value="1">
-                                            </div>
-                                            
-                                            <!-- Индикаторы: условие или рекомендация -->
-                                            <div class="mb-3">
-                                                <label class="form-label">Использование индикаторов:</label>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio" name="indicatorsMode" id="indicatorsAsRecommendationRadio" value="recommendation" checked>
-                                                    <label class="form-check-label" for="indicatorsAsRecommendationRadio">
-                                                        Как рекомендация
-                                                        <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Сигналы индикаторов считаются рекомендацией. Бот примет решение на основе уровня уверенности."></i>
-                                                    </label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio" name="indicatorsMode" id="indicatorsAsRequirementRadio" value="requirement">
-                                                    <label class="form-check-label" for="indicatorsAsRequirementRadio">
-                                                        Как обязательное условие
-                                                        <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Сделка будет открыта только при полном выполнении всех условий по индикаторам."></i>
-                                                    </label>
-                                                </div>
-                                                <div class="form-text">Минимальный порог уверенности для входа:</div>
-                                                <div class="d-flex align-items-center">
-                                                    <input type="range" class="form-range me-2" id="confidenceThresholdRange" min="50" max="90" step="5" value="60">
-                                                    <span id="confidenceThresholdValue">60%</span>
-                                                </div>
-                                            </div>
-                                            
-                                            <h6 class="mt-4">Параметры DCA (для стратегии DCA)</h6>
-                                            <div class="mb-3">
-                                                <label class="form-label">Максимальное количество DCA ордеров:</label>
-                                                <input type="number" class="form-control" id="dcaMaxOrdersInput" min="1" max="5" value="3">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Шаг цены для DCA (%):</label>
-                                                <input type="number" class="form-control" id="dcaPriceStepInput" min="0.5" max="5" step="0.1" value="1.5">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Множитель размера DCA:</label>
-                                                <input type="number" class="form-control" id="dcaMultiplierInput" min="1" max="3" step="0.1" value="1.5">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <h6 class="mt-4">Настройки индикаторов</h6>
-                                    <div class="row">
-                                        <!-- RSI настройки -->
-                                        <div class="col-md-4">
-                                            <div class="card mb-3">
-                                                <div class="card-header bg-light">
-                                                    <strong>RSI</strong>
-                                                    <div class="form-check form-switch float-end">
-                                                        <input class="form-check-input" type="checkbox" id="rsiEnabledCheck" checked>
-                                                    </div>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Период:</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <input type="number" class="form-control" id="rsiPeriodInput" min="5" max="30" value="14">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период расчета RSI. Меньшее значение дает более быструю реакцию на изменения цены, но больше ложных сигналов.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Зона перекупленности:</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <input type="number" class="form-control" id="rsiOverboughtInput" min="60" max="90" value="70">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Значение RSI, выше которого считается сигналом на SHORT. Уменьшение значения даст больше сигналов, но снизит их качество.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Зона перепроданности:</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <input type="number" class="form-control" id="rsiOversoldInput" min="10" max="40" value="30">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Значение RSI, ниже которого считается сигналом на LONG. Увеличение значения даст больше сигналов, но снизит их качество.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- EMA настройки -->
-                                        <div class="col-md-4">
-                                            <div class="card mb-3">
-                                                <div class="card-header bg-light">
-                                                    <strong>EMA</strong>
-                                                    <div class="form-check form-switch float-end">
-                                                        <input class="form-check-input" type="checkbox" id="emaEnabledCheck" checked>
-                                                    </div>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Быстрая EMA:</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <input type="number" class="form-control" id="emaFastInput" min="5" max="50" value="20">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период быстрой EMA. Меньшее значение дает более быструю реакцию на изменения тренда.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Средняя EMA:</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <input type="number" class="form-control" id="emaMediumInput" min="20" max="100" value="50">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период средней EMA для определения среднесрочного тренда.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Медленная EMA:</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <input type="number" class="form-control" id="emaSlowInput" min="50" max="200" value="100">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период медленной EMA для подтверждения долгосрочного тренда. Сигнал считается сильным, когда все три EMA выстроены в одном направлении.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Bollinger Bands настройки -->
-                                        <div class="col-md-4">
-                                            <div class="card mb-3">
-                                                <div class="card-header bg-light">
-                                                    <strong>Bollinger Bands</strong>
-                                                    <div class="form-check form-switch float-end">
-                                                        <input class="form-check-input" type="checkbox" id="bbEnabledCheck" checked>
-                                                    </div>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Период:</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <input type="number" class="form-control" id="bbPeriodInput" min="10" max="50" value="20">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Период расчета Bollinger Bands. Определяет, насколько быстро полосы реагируют на изменения цены.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Отклонение:</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <input type="number" class="form-control" id="bbDeviationInput" min="1" max="3" step="0.1" value="2">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Множитель стандартного отклонения для верхней и нижней полос. Увеличение значения расширяет диапазон и уменьшает количество сигналов.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Стратегия:</label>
-                                                        <select class="form-select form-select-sm" id="bbStrategySelect">
-                                                            <option value="bounce">Отскок от границ</option>
-                                                            <option value="breakout">Пробой границ</option>
-                                                            <option value="squeeze">Сжатие полос</option>
-                                                        </select>
-                                                        <small class="form-text text-muted">Стратегия использования Bollinger Bands для генерации сигналов.</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Фильтры и дополнительные настройки -->
-                                    <div class="row mt-2">
-                                        <div class="col-md-6">
-                                            <div class="card mb-3">
-                                                <div class="card-header bg-light">
-                                                    <strong>Фильтры сигналов</strong>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="mb-2">
-                                                        <label class="form-label">ADX (сила тренда):</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <div class="input-group-prepend">
-                                                                <div class="input-group-text">
-                                                                    <input type="checkbox" id="adxEnabledCheck" checked>
-                                                                </div>
-                                                            </div>
-                                                            <input type="number" class="form-control" id="adxMinValueInput" min="10" max="50" value="20">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Минимальное значение ADX для открытия позиции. ADX > 20 указывает на наличие тренда, ADX > 40 на сильный тренд.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Объем торгов:</label>
-                                                        <div class="input-group input-group-sm">
-                                                            <div class="input-group-prepend">
-                                                                <div class="input-group-text">
-                                                                    <input type="checkbox" id="volumeEnabledCheck" checked>
-                                                                </div>
-                                                            </div>
-                                                            <input type="number" class="form-control" id="volumeMinInput" min="0.2" max="2" step="0.1" value="0.5">
-                                                            <div class="input-group-append">
-                                                                <span class="input-group-text bg-light" data-bs-toggle="tooltip" title="Минимальный относительный объем торгов (по отношению к среднему объему). Значение >1 требует объем выше среднего.">
-                                                                    <i class="bi bi-info-circle"></i>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Комбинация индикаторов:</label>
-                                                        <select class="form-select form-select-sm" id="indicatorsCombinationSelect">
-                                                            <option value="any">Любой индикатор (ИЛИ)</option>
-                                                            <option value="majority">Большинство индикаторов</option>
-                                                            <option value="all" selected>Все индикаторы (И)</option>
-                                                        </select>
-                                                        <small class="form-text text-muted">Логика комбинирования сигналов от разных индикаторов.</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="card mb-3">
-                                                <div class="card-header bg-light">
-                                                    <strong>Настройки стратегии</strong>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="mb-2">
-                                                        <label class="form-label">Агрессивность стратегии:</label>
-                                                        <div class="input-group">
-                                                            <input type="range" class="form-range" id="strategyAggressivenessRange" min="1" max="5" value="3">
-                                                        </div>
-                                                        <div class="d-flex justify-content-between">
-                                                            <small>Консервативно</small>
-                                                            <small>Нейтрально</small>
-                                                            <small>Агрессивно</small>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <!-- Настройки для стратегии Scalping -->
-                                                    <div id="scalpingSettings">
-                                                        <div class="mb-2 mt-3">
-                                                            <label class="form-label">Реакция на микро-тренды:</label>
-                                                            <div class="form-check">
-                                                                <input class="form-check-input" type="checkbox" id="fastReactionCheck" checked>
-                                                                <label class="form-check-label" for="fastReactionCheck">
-                                                                    Быстрая реакция на микро-тренды
-                                                                    <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Включает использование более коротких периодов для индикаторов, что повышает скорость реакции на кратковременные изменения цены."></i>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label">Scalping режим:</label>
-                                                            <select class="form-select form-select-sm" id="scalpingModeSelect">
-                                                                <option value="standard">Стандартный</option>
-                                                                <option value="ultra">Ультра-скальпинг</option>
-                                                                <option value="safe">Безопасный</option>
-                                                            </select>
-                                                            <small class="form-text text-muted">Предустановки для разных типов скальпинга.</small>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <!-- Настройки для стратегии DCA -->
-                                                    <div id="dcaSettings" style="display:none;">
-                                                        <div class="mb-2 mt-3">
-                                                            <label class="form-label">Стратегия усреднения:</label>
-                                                            <select class="form-select form-select-sm" id="dcaStrategySelect">
-                                                                <option value="standard">Стандартная</option>
-                                                                <option value="aggressive">Агрессивная</option>
-                                                                <option value="safe">Консервативная</option>
-                                                            </select>
-                                                            <small class="form-text text-muted">Предустановки для разных типов усреднения.</small>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <label class="form-label">Максимальное количество DCA ордеров:</label>
-                                                            <input type="number" class="form-control form-control-sm" id="dcaMaxOrdersInput2" min="1" max="10" value="3">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="d-grid">
-                                        <button class="btn btn-primary" id="saveAdvancedSettingsBtn">
-                                            <i class="bi bi-save"></i> Сохранить расширенные настройки
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -809,9 +959,62 @@
         </div>
     </div>
 
+    <!-- Модальное окно для результатов анализа пары -->
+    <div class="modal fade" id="pairAnalysisModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pairAnalysisTitle">Анализ пары</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="pairAnalysisBody">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-3">Выполняется анализ пары...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/script.js"></script>
+    
+    <!-- CSS стили для вкладки мультибота -->
+    <style>
+    .highlight-pulse {
+        animation: highlightPulse 1.5s;
+    }
+
+    @keyframes highlightPulse {
+        0% { background-color: rgba(13, 110, 253, 0.1); }
+        50% { background-color: rgba(13, 110, 253, 0.3); }
+        100% { background-color: rgba(13, 110, 253, 0); }
+    }
+
+    /* Стили для карточек торговых пар */
+    #activePairsContainer .card {
+        transition: transform 0.2s;
+    }
+
+    #activePairsContainer .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    #activePairsContainer .card-header {
+        padding: 0.5rem 0.75rem;
+    }
+
+    #activePairsContainer .btn {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    </style>
 </body>
 </html>

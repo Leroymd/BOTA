@@ -2,9 +2,9 @@
 
 const technicalindicators = require('technicalindicators');
 const EventEmitter = require('events');
-const { TradingBot } = require('./bot');
+const { TradingBot } = require('./trading-bot'); // Обновленный импорт из нового файла
 const config = require('./config');
-const BitGetClient = require('./bitget-client');
+const BitGetClient = require('./exchange/bitget-client'); // Обновленный путь к BitGetClient
 
 /**
  * Класс для сканирования и анализа торговых пар

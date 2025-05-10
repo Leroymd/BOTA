@@ -15,7 +15,7 @@ const config = {
     demo: false
   },
   bot: {
-    symbol: "SOLUSDT",
+    symbol: "XRPUSDT",
     strategy: "SCALPING",
     initialDeposit: 100,
     leverage: 5,
@@ -37,7 +37,7 @@ const config = {
     },
     entries: {
       rsi: {
-        enabled: true,
+        enabled: false,
         period: 5,
         overbought: 60,
         oversold: 40
@@ -49,21 +49,10 @@ const config = {
         slowPeriod: 50
       },
       bollingerBands: {
-        enabled: true,
+        enabled: false,
         period: 10,
         deviation: 1,
         strategy: "squeeze"
-      },
-      filters: {
-        adx: {
-          enabled: true,
-          minValue: 10
-        },
-        volume: {
-          enabled: true,
-          minimumVolume: 0.2
-        },
-        indicatorsCombination: "majority"
       }
     },
     filters: {
@@ -83,7 +72,16 @@ const config = {
       multiplier: 1.5
     },
     logLevel: "info",
-    reinvestment: 90
+    reinvestment: 90,
+    partialClose: {
+      enabled: false,
+      level1: 0.15,
+      amount1: 30,
+      level2: 0.25,
+      amount2: 50
+    },
+    indicatorsAsRequirement: false,
+    confidenceThreshold: 50
   },
   logging: {
     level: "info",

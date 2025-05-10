@@ -19,7 +19,7 @@ const config = {
     strategy: "SCALPING",
     initialDeposit: 100,
     leverage: 5,
-    positionSize: 20,
+    positionSize: 5,
     takeProfitPercentage: 0.25,
     stopLossPercentage: 0.15,
     trailingStop: {
@@ -74,7 +74,7 @@ const config = {
     logLevel: "info",
     reinvestment: 90,
     partialClose: {
-      enabled: false,
+      enabled: true,
       level1: 0.15,
       amount1: 30,
       level2: 0.25,

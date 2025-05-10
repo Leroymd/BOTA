@@ -375,44 +375,55 @@ calculatePositionSize() {
 }
 
   /**
-   * Открытие новой позиции
-   * @param {string} type - Тип позиции (LONG или SHORT)
-   * @param {number} price - Цена входа
-   * @param {string} reason - Причина открытия позиции
-   * @param {number} confidenceLevel - Уровень уверенности (0-100%)
-   * @returns {Promise<Object|null>} - Созданная позиция или null при ошибке
-   */
-  async openPosition(type, price, reason, confidenceLevel = 0) {
+ * Открытие новой позиции
+ * @param {string} type - Тип позиции (LONG или SHORT)
+ * @param {number} price - Цена входа
+ * @param {string} reason - Причина открытия позиции
+ * @param {number} confidenceLevel - Уровень уверенности (0-100%)
+ * @returns {Promise<Object|null>} - Созданная позиция или null при ошибке
+ */
+async openPosition(type, price, reason, confidenceLevel = 0) {
+  try {
+    if (!this.client || !price) {
+      console.error('Не удалось открыть позицию: отсутствует клиент API или цена.');
+      return null;
+    }
+    
+    // Проверяем, что не превышаем максимальное количество открытых позиций
+    if (this.openPositions.length >= this.config.riskManagement.maxOpenPositions) {
+      console.warn(`Достигнуто максимальное количество открытых позиций (${this.config.riskManagement.maxOpenPositions})`);
+      return null;
+    }
+    
+    // Расчет размера позиции
+    const positionSize = this.calculatePositionSize();
+    if (positionSize <= 0) {
+      console.error('Не удалось рассчитать размер позиции');
+      return null;
+    }
+    
+    // Улучшенное логирование
+    console.log(`-------- ОТКРЫТИЕ ПОЗИЦИИ --------`);
+    console.log(`Тип: ${type}, Размер: ${positionSize} USDT, Цена: ${price}, Уверенность: ${confidenceLevel}%`);
+    console.log(`Причина: ${reason}`);
+    
+    // Определяем side для BitGet API
+    const side = type === 'LONG' ? 'BUY' : 'SELL';
+    
+    console.log(`Создание ${type} позиции (side=${side}) размером ${positionSize} USDT по рыночной цене...`);
+    
+    // Размещение ордера через клиент BitGet
     try {
-      if (!this.client || !price) {
-        console.error('Не удалось открыть позицию: отсутствует клиент API или цена.');
-        return null;
-      }
-      
-      // Проверяем, что не превышаем максимальное количество открытых позиций
-      if (this.openPositions.length >= this.config.riskManagement.maxOpenPositions) {
-        console.warn(`Достигнуто максимальное количество открытых позиций (${this.config.riskManagement.maxOpenPositions})`);
-        return null;
-      }
-      
-      // Расчет размера позиции
-      const positionSize = this.calculatePositionSize();
-      if (positionSize <= 0) {
-        console.error('Не удалось рассчитать размер позиции');
-        return null;
-      }
-      
-      console.log(`Создание ${type} позиции размером ${positionSize} USDT по рыночной цене...`);
-      
-      // Размещение ордера через клиент BitGet
       const orderResult = await this.client.placeOrder(
         this.config.symbol,
-        type === 'LONG' ? 'BUY' : 'SELL',
+        side,
         'MARKET',
         positionSize,
         null,  // Нет цены для рыночного ордера
         false  // Не reduceOnly
       );
+      
+      console.log(`Ответ API при размещении ордера:`, JSON.stringify(orderResult));
       
       if (orderResult.code === '00000' && orderResult.data && orderResult.data.orderId) {
         const orderId = orderResult.data.orderId;
@@ -430,6 +441,11 @@ calculatePositionSize() {
         const stopLossPrice = type === 'LONG'
           ? price * (1 - stopLossPercentage / 100)
           : price * (1 + stopLossPercentage / 100);
+        
+        console.log(`Расчет TP/SL для ${type}:`);
+        console.log(`- Цена входа: ${price}`);
+        console.log(`- TP %: ${takeProfitPercentage}, TP цена: ${takeProfitPrice}`);
+        console.log(`- SL %: ${stopLossPercentage}, SL цена: ${stopLossPrice}`);
         
         // Установка тейк-профита и стоп-лосса
         await this.setTakeProfitAndStopLoss(type, orderId, takeProfitPrice, stopLossPrice);
@@ -467,17 +483,35 @@ calculatePositionSize() {
           await this.prepareDCAOrders(newPosition);
         }
         
+        console.log(`Позиция успешно создана и добавлена в список открытых позиций`);
+        console.log(`-------- ПОЗИЦИЯ ОТКРЫТА --------`);
+        
         this.emit('position_opened', newPosition);
         return newPosition;
       } else {
-        console.error(`Ошибка создания ордера: ${orderResult.msg || 'Неизвестная ошибка'}`);
+        console.error(`Ошибка создания ордера:`, orderResult);
+        console.error(`Код ошибки: ${orderResult.code}, Сообщение: ${orderResult.msg || 'Неизвестная ошибка'}`);
         return null;
       }
-    } catch (error) {
-      console.error('Ошибка при открытии позиции:', error);
+    } catch (orderError) {
+      console.error(`Ошибка в API при размещении ордера:`, orderError);
+      // Полная информация об ошибке для отладки
+      if (orderError.response) {
+        console.error('Данные ответа:', orderError.response.data);
+        console.error('Статус ответа:', orderError.response.status);
+        console.error('Заголовки ответа:', orderError.response.headers);
+      } else if (orderError.request) {
+        console.error('Нет ответа от сервера, объект запроса:', orderError.request);
+      } else {
+        console.error('Сообщение об ошибке:', orderError.message);
+      }
       return null;
     }
+  } catch (error) {
+    console.error('Ошибка при открытии позиции:', error);
+    return null;
   }
+}
 
   /**
    * Закрытие позиции полное или частичное
@@ -562,55 +596,71 @@ calculatePositionSize() {
   }
 
   /**
-   * Установка тейк-профита и стоп-лосса
-   * @param {string} positionType - Тип позиции (LONG или SHORT)
-   * @param {string} orderId - ID ордера
-   * @param {number} tpPrice - Цена тейк-профита
-   * @param {number} slPrice - Цена стоп-лосса
-   * @returns {Promise<boolean>} - Результат установки
-   */
-  async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
-    try {
-      // Параметры для TP
-      const tpParams = {
-        symbol: this.config.symbol,
-        marginCoin: 'USDT',
-        triggerPrice: tpPrice.toFixed(6),
-        triggerType: 'market_price',
-        orderType: 'market',
-        side: positionType === 'LONG' ? 3 : 4, // 3 - close long, 4 - close short
-        size: '100%',
-        clientOid: `tp_${orderId}`
-      };
-      
-      // Параметры для SL
-      const slParams = {
-        symbol: this.config.symbol,
-        marginCoin: 'USDT',
-        triggerPrice: slPrice.toFixed(6),
-        triggerType: 'market_price',
-        orderType: 'market',
-        side: positionType === 'LONG' ? 3 : 4, // 3 - close long, 4 - close short
-        size: '100%',
-        clientOid: `sl_${orderId}`
-      };
-      
-      // Создание TP и SL
-      const tpResult = await this.client.submitPlanOrder(tpParams);
-      const slResult = await this.client.submitPlanOrder(slParams);
-      
-      if (tpResult.code === '00000' && slResult.code === '00000') {
-        console.log(`Установлены TP (${tpPrice.toFixed(6)}) и SL (${slPrice.toFixed(6)}) для ордера ${orderId}`);
-        return true;
-      } else {
-        console.error('Ошибка при установке TP/SL:', tpResult.msg, slResult.msg);
-        return false;
-      }
-    } catch (error) {
-      console.error('Ошибка при установке TP/SL:', error);
+ * Установка тейк-профита и стоп-лосса
+ * @param {string} positionType - Тип позиции (LONG или SHORT)
+ * @param {string} orderId - ID ордера
+ * @param {number} tpPrice - Цена тейк-профита
+ * @param {number} slPrice - Цена стоп-лосса
+ * @returns {Promise<boolean>} - Результат установки
+ */
+async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
+  try {
+    console.log(`Установка TP/SL для позиции ${orderId} (${positionType})`);
+    console.log(`TP цена: ${tpPrice.toFixed(6)}, SL цена: ${slPrice.toFixed(6)}`);
+    
+    // Для TP/SL в submitPlanOrder нужно использовать правильный side
+    // Для закрытия LONG: 'SELL', для закрытия SHORT: 'BUY'
+    const tpSlSide = positionType === 'LONG' ? 'SELL' : 'BUY';
+    
+    // Параметры для TP
+    const tpParams = {
+      symbol: this.config.symbol,
+      marginCoin: 'USDT',
+      triggerPrice: tpPrice.toFixed(6),
+      triggerType: 'market_price',
+      orderType: 'market',
+      side: tpSlSide,
+      size: '100%',
+      clientOid: `tp_${orderId}_${new Date().getTime()}`
+    };
+    
+    // Параметры для SL
+    const slParams = {
+      symbol: this.config.symbol,
+      marginCoin: 'USDT',
+      triggerPrice: slPrice.toFixed(6),
+      triggerType: 'market_price',
+      orderType: 'market',
+      side: tpSlSide,
+      size: '100%',
+      clientOid: `sl_${orderId}_${new Date().getTime()}`
+    };
+    
+    console.log('Параметры TP-ордера:', JSON.stringify(tpParams));
+    console.log('Параметры SL-ордера:', JSON.stringify(slParams));
+    
+    // Создание TP
+    const tpResult = await this.client.submitPlanOrder(tpParams);
+    console.log('Ответ API на создание TP:', JSON.stringify(tpResult));
+    
+    // Создание SL
+    const slResult = await this.client.submitPlanOrder(slParams);
+    console.log('Ответ API на создание SL:', JSON.stringify(slResult));
+    
+    if (tpResult.code === '00000' && slResult.code === '00000') {
+      console.log(`Успешно установлены TP (${tpPrice.toFixed(6)}) и SL (${slPrice.toFixed(6)}) для ордера ${orderId}`);
+      return true;
+    } else {
+      console.error('Ошибка при установке TP/SL:');
+      console.error('TP результат:', tpResult);
+      console.error('SL результат:', slResult);
       return false;
     }
+  } catch (error) {
+    console.error('Ошибка при установке TP/SL:', error);
+    return false;
   }
+}
 
   /**
    * Обновление трейлинг-стопов

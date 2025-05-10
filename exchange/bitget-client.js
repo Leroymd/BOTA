@@ -370,9 +370,7 @@ class BitGetClient {
     }
   }
 
-  // Исправленный метод placeOrder в файле exchange/bitget-client.js
-
-/**
+  /**
  * Размещение ордера
  * @param {string} symbol - Символ торговой пары
  * @param {string} side - Сторона (BUY или SELL)
@@ -383,7 +381,7 @@ class BitGetClient {
  * @returns {Promise<Object>} - Результат размещения ордера
  */
 async placeOrder(symbol, side, orderType, size, price = null, reduceOnly = false) {
-  console.log(`Placing order for ${symbol}: ${side} ${orderType} ${size}`);
+  console.log(`Размещение ордера для ${symbol}: ${side} ${orderType} ${size}`);
   
   // Проверка наличия обязательных параметров
   if (!symbol) {
@@ -391,37 +389,54 @@ async placeOrder(symbol, side, orderType, size, price = null, reduceOnly = false
     return Promise.reject(error);
   }
 
-  // Определяем holdSide на основе переданного side
-  const holdSide = side.toUpperCase() === 'BUY' ? 'long' : 'short';
-
-  // Создаем объект параметров для API
-  const params = {
-    symbol,
-    marginCoin: 'USDT', // По умолчанию USDT
-    size: size.toString(),
-    side: side.toLowerCase(),
-    orderType: orderType.toUpperCase(),
-    timeInForceValue: 'normal',
-    marginMode: 'isolated', // Важно: добавляем marginMode
-    clientOid: `order_${Date.now()}`,
-    holdSide: holdSide // Явно устанавливаем holdSide
-  };
-
-  // Добавляем reduceOnly только если он true (согласно документации BitGet)
-  if (reduceOnly === true) {
-    params.reduceOnly = true;
+  // Проверяем, что side имеет правильное значение
+  if (side !== 'BUY' && side !== 'SELL') {
+    console.error(`Некорректное значение side: ${side}, должно быть BUY или SELL`);
+    return Promise.reject(new Error(`Invalid side value: ${side}`));
   }
 
-  // Если это лимитный ордер, добавляем цену
-  if (orderType.toUpperCase() === 'LIMIT' && price) {
-    params.price = price.toString();
-  }
+  try {
+    // Создаем объект параметров для API
+    const params = {
+      symbol,
+      marginCoin: 'USDT', // По умолчанию USDT
+      size: size.toString(),
+      side: side, // Используем строковое значение 'BUY' или 'SELL'
+      orderType: orderType.toUpperCase(),
+      timeInForceValue: 'normal',
+      marginMode: 'isolated', // Важно: добавляем marginMode
+      clientOid: `order_${Date.now()}`
+    };
 
-  // Логирование параметров ордера для отладки
-  this.log(`Placing order with params:`, JSON.stringify(params));
-  
-  // Реальное размещение ордера через API
-  return this.submitOrder(params);
+    // Добавляем reduceOnly только если он true (согласно документации BitGet)
+    if (reduceOnly === true) {
+      params.reduceOnly = true;
+    }
+
+    // Если это лимитный ордер, добавляем цену
+    if (orderType.toUpperCase() === 'LIMIT' && price) {
+      params.price = price.toString();
+    }
+
+    // Логирование параметров ордера для отладки
+    this.log(`Размещение ордера с параметрами:`, JSON.stringify(params));
+    
+    // Реальное размещение ордера через API
+    const result = await this.submitOrder(params);
+    this.log(`Результат размещения ордера:`, JSON.stringify(result));
+    return result;
+  } catch (error) {
+    this.logError(`Ошибка при размещении ордера:`, error);
+    
+    // Получение дополнительной информации об ошибке
+    if (error.response) {
+      this.logError('Данные ответа:', error.response.data);
+      this.logError('Статус ответа:', error.response.status);
+    }
+    
+    return Promise.reject(error);
+  }
+}
 }
 
 module.exports = BitGetClient;

@@ -370,7 +370,7 @@ class BitGetClient {
     }
   }
 
-  // Исправленный метод placeOrder в файле exchanges/bitget-client.js
+  // Исправленный метод placeOrder в файле exchange/bitget-client.js
 
 /**
  * Размещение ордера

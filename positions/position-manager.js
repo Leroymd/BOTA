@@ -351,27 +351,28 @@ async updateOpenPositions(currentPrice) {
   }
 }
   /**
-   * Расчет размера позиции с учетом реинвестирования
-   * @returns {number} - Размер позиции в USDT
-   */
-  calculatePositionSize() {
-    try {
-      // Базовый размер позиции как процент от текущего баланса
-      let sizePercentage = this.config.positionSize || 30;
-      
-      // Применяем коэффициент реинвестирования
-      let effectiveBalance = this.balance;
-      
-      // Рассчитываем размер позиции с учетом эффективного баланса и плеча
-      const positionSize = (effectiveBalance * (sizePercentage / 100) * this.config.leverage);
-      
-      // Округляем до 4 знаков после запятой
-      return Math.floor(positionSize * 10000) / 10000;
-    } catch (error) {
-      console.error('Ошибка при расчете размера позиции:', error);
-      return 0;
-    }
+ * Расчет размера позиции с учетом реинвестирования
+ * @returns {number} - Размер позиции в USDT
+ */
+calculatePositionSize() {
+  try {
+    // Базовый размер позиции как процент от текущего баланса
+    let sizePercentage = this.config.positionSize || 30;
+    
+    // Учитываем реальный баланс
+    let effectiveBalance = this.balance;
+    
+    // Рассчитываем размер позиции как процент от баланса
+    // Важно: НЕ умножаем на плечо здесь, т.к. это влияет только на расчет внутри биржи
+    const positionSize = (effectiveBalance * (sizePercentage / 100));
+    
+    // Округляем до 4 знаков после запятой
+    return Math.floor(positionSize * 10000) / 10000;
+  } catch (error) {
+    console.error('Ошибка при расчете размера позиции:', error);
+    return 0;
   }
+}
 
   /**
    * Открытие новой позиции

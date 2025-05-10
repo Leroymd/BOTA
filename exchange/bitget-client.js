@@ -370,60 +370,58 @@ class BitGetClient {
     }
   }
 
-  /**
-   * Размещение ордера
-   * @param {string} symbol - Символ торговой пары
-   * @param {string} side - Сторона (BUY или SELL)
-   * @param {string} orderType - Тип ордера (LIMIT или MARKET)
-   * @param {string|number} size - Размер ордера
-   * @param {number|null} price - Цена для лимитного ордера
-   * @param {boolean} reduceOnly - Флаг только для уменьшения позиции (не используется в одностороннем режиме)
-   * @returns {Promise<Object>} - Результат размещения ордера
-   */
-  async placeOrder(symbol, side, orderType, size, price = null, reduceOnly = false) {
-    console.log(`Placing order for ${symbol}: ${side} ${orderType} ${size}`);
-    
-    // Проверка наличия обязательных параметров
-    if (!symbol) {
-      const error = new Error('Symbol is required for placing an order');
-      return Promise.reject(error);
-    }
+  // Исправленный метод placeOrder в файле exchanges/bitget-client.js
 
-    // Преобразование side в нижний регистр для использования в API
-    const sideFormatted = side.toLowerCase();
-    
-    // Определяем holdSide для одностороннего режима
-    // В одностороннем режиме holdSide должен соответствовать направлению
-    const holdSide = sideFormatted === 'buy' ? 'long' : 'short';
-
-    // Создаем объект параметров для API
-    const params = {
-      symbol,
-      marginCoin: 'USDT', // По умолчанию USDT
-      size: size.toString(),
-      side: sideFormatted,
-      orderType: orderType.toUpperCase(),
-      timeInForceValue: 'normal',
-      marginMode: 'isolated',
-      clientOid: `order_${Date.now()}`,
-      // Добавляем holdSide для одностороннего режима
-      holdSide: holdSide
-    };
-
-    // НЕ добавляем reduceOnly в одностороннем режиме
-    // В одностороннем режиме параметр reduceOnly не используется и может вызвать ошибку
-    
-    // Если это лимитный ордер, добавляем цену
-    if (orderType.toUpperCase() === 'LIMIT' && price) {
-      params.price = price.toString();
-    }
-
-    // Логирование параметров ордера для отладки
-    this.log(`Placing order with params:`, JSON.stringify(params));
-    
-    // Реальное размещение ордера через API
-    return this.submitOrder(params);
+/**
+ * Размещение ордера
+ * @param {string} symbol - Символ торговой пары
+ * @param {string} side - Сторона (BUY или SELL)
+ * @param {string} orderType - Тип ордера (LIMIT или MARKET)
+ * @param {string|number} size - Размер ордера
+ * @param {number|null} price - Цена для лимитного ордера
+ * @param {boolean} reduceOnly - Флаг только для уменьшения позиции
+ * @returns {Promise<Object>} - Результат размещения ордера
+ */
+async placeOrder(symbol, side, orderType, size, price = null, reduceOnly = false) {
+  console.log(`Placing order for ${symbol}: ${side} ${orderType} ${size}`);
+  
+  // Проверка наличия обязательных параметров
+  if (!symbol) {
+    const error = new Error('Symbol is required for placing an order');
+    return Promise.reject(error);
   }
+
+  // Определяем holdSide на основе переданного side
+  const holdSide = side.toUpperCase() === 'BUY' ? 'long' : 'short';
+
+  // Создаем объект параметров для API
+  const params = {
+    symbol,
+    marginCoin: 'USDT', // По умолчанию USDT
+    size: size.toString(),
+    side: side.toLowerCase(),
+    orderType: orderType.toUpperCase(),
+    timeInForceValue: 'normal',
+    marginMode: 'isolated', // Важно: добавляем marginMode
+    clientOid: `order_${Date.now()}`,
+    holdSide: holdSide // Явно устанавливаем holdSide
+  };
+
+  // Добавляем reduceOnly только если он true (согласно документации BitGet)
+  if (reduceOnly === true) {
+    params.reduceOnly = true;
+  }
+
+  // Если это лимитный ордер, добавляем цену
+  if (orderType.toUpperCase() === 'LIMIT' && price) {
+    params.price = price.toString();
+  }
+
+  // Логирование параметров ордера для отладки
+  this.log(`Placing order with params:`, JSON.stringify(params));
+  
+  // Реальное размещение ордера через API
+  return this.submitOrder(params);
 }
 
 module.exports = BitGetClient;

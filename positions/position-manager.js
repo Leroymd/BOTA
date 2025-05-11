@@ -86,16 +86,18 @@ async updatePositionParams(positionId, params) {
       }
       
       // Создаем новый тейк-профит ордер
+      const tpSide = position.type === 'LONG' ? 'sell' : 'buy';
+      
       const tpParams = {
         symbol: this.config.symbol,
         marginCoin: 'USDT',
         triggerPrice: takeProfitPrice.toFixed(6),
         triggerType: 'market_price',
         orderType: 'market',
-        side: position.type === 'LONG' ? 'sell' : 'buy', // Исправлено: используем строковые значения
+        side: tpSide,
+        tradeSide: 'close', // Добавляем параметр tradeSide: 'close'
         size: '100%',
-        clientOid: `tp_${position.id}_${new Date().getTime()}`,
-        reduceOnly: true // Добавлено для закрытия существующей позиции
+        clientOid: `tp_${position.id}_${new Date().getTime()}`
       };
       
       await this.client.submitPlanOrder(tpParams);
@@ -122,16 +124,18 @@ async updatePositionParams(positionId, params) {
       }
       
       // Создаем новый стоп-лосс ордер
+      const slSide = position.type === 'LONG' ? 'sell' : 'buy';
+      
       const slParams = {
         symbol: this.config.symbol,
         marginCoin: 'USDT',
         triggerPrice: stopLossPrice.toFixed(6),
         triggerType: 'market_price',
         orderType: 'market',
-        side: position.type === 'LONG' ? 'sell' : 'buy', // Исправлено: используем строковые значения
+        side: slSide,
+        tradeSide: 'close', // Добавляем параметр tradeSide: 'close'
         size: '100%',
-        clientOid: `sl_${position.id}_${new Date().getTime()}`,
-        reduceOnly: true // Добавлено для закрытия существующей позиции
+        clientOid: `sl_${position.id}_${new Date().getTime()}`
       };
       
       await this.client.submitPlanOrder(slParams);
@@ -419,10 +423,10 @@ async openPosition(type, price, reason, confidenceLevel = 0) {
       const orderResult = await this.client.placeOrder(
         this.config.symbol,
         side,
-        'market',  // Исправлено: использование нижнего регистра
+        'market',  // Тип ордера
         positionSize,
         null,  // Нет цены для рыночного ордера
-        false  // Не reduceOnly
+        'open'  // Указываем явно, что открываем позицию
       );
       
       console.log(`Ответ API при размещении ордера:`, JSON.stringify(orderResult));
@@ -555,10 +559,10 @@ async openPosition(type, price, reason, confidenceLevel = 0) {
       const orderResult = await this.client.placeOrder(
         this.config.symbol,
         side,
-        'market', // Используем market вместо MARKET
+        'market', // Используем market для закрытия
         closeSize,
         null,
-        true // reduceOnly
+        'close' // Указываем явно, что закрываем позицию
       );
       
       if (orderResult.code === '00000') {
@@ -626,9 +630,9 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
       triggerType: 'market_price',
       orderType: 'market',
       side: tpSlSide,
+      tradeSide: 'close', // Добавляем параметр tradeSide для торговой стороны
       size: '100%',
-      clientOid: `tp_${orderId}_${new Date().getTime()}`,
-      reduceOnly: true // Устанавливаем reduceOnly для закрытия позиции
+      clientOid: `tp_${orderId}_${new Date().getTime()}`
     };
     
     // Параметры для SL
@@ -639,9 +643,9 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
       triggerType: 'market_price',
       orderType: 'market',
       side: tpSlSide,
+      tradeSide: 'close', // Добавляем параметр tradeSide для торговой стороны
       size: '100%',
-      clientOid: `sl_${orderId}_${new Date().getTime()}`,
-      reduceOnly: true // Устанавливаем reduceOnly для закрытия позиции
+      clientOid: `sl_${orderId}_${new Date().getTime()}`
     };
     
     console.log('Параметры TP-ордера:', JSON.stringify(tpParams));
@@ -747,9 +751,9 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
         triggerType: 'market_price',
         orderType: 'market',
         side: stopSide,
+        tradeSide: 'close', // Добавляем параметр tradeSide: 'close'
         size: '100%',
-        clientOid: `ts_${position.id}_${new Date().getTime()}`,
-        reduceOnly: true // Устанавливаем reduceOnly для закрытия позиции
+        clientOid: `ts_${position.id}_${new Date().getTime()}`
       };
       
       const stopResult = await this.client.submitPlanOrder(stopParams);
@@ -824,7 +828,7 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
         
         console.log(`Создание DCA ордера #${i} для позиции ${position.id} по цене ${dcaPrice.toFixed(6)}`);
         
-        // Размещение лимитного DCA ордера с правильными строковыми значениями
+        // Размещение лимитного DCA ордера с правильными параметрами
         const side = position.type === 'LONG' ? 'buy' : 'sell';
         
         const orderResult = await this.client.placeOrder(
@@ -833,7 +837,7 @@ async setTakeProfitAndStopLoss(positionType, orderId, tpPrice, slPrice) {
           'limit',
           dcaSize,
           dcaPrice.toFixed(6),
-          false
+          'open' // DCA ордера всегда открывают дополнительные позиции
         );
         
         if (orderResult.code === '00000') {

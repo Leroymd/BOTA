@@ -15,7 +15,7 @@ const config = {
     demo: false
   },
   bot: {
-    symbol: "SOLUSDT",
+    symbol: "XRPUSDT",
     strategy: "SCALPING",
     initialDeposit: 100,
     leverage: 5,
@@ -64,7 +64,7 @@ const config = {
         enabled: true,
         minimumVolume: 0.2
       },
-      indicatorsCombination: "majority"
+      indicatorsCombination: "any"
     },
     dca: {
       maxOrders: 3,

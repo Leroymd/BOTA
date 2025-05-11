@@ -377,11 +377,11 @@ class BitGetClient {
  * @param {string} orderType - Тип ордера (LIMIT или MARKET)
  * @param {string|number} size - Размер ордера
  * @param {number|null} price - Цена для лимитного ордера
- * @param {boolean} reduceOnly - Флаг только для уменьшения позиции
+ * @param {string} tradeSide - Сторона торговли (open или close)
  * @returns {Promise<Object>} - Результат размещения ордера
  */
-async placeOrder(symbol, side, orderType, size, price = null, reduceOnly = false) {
-  console.log(`Размещение ордера для ${symbol}: ${side} ${orderType} ${size}`);
+async placeOrder(symbol, side, orderType, size, price = null, tradeSide = 'open') {
+  console.log(`Размещение ордера для ${symbol}: ${side} ${orderType} ${size} (${tradeSide})`);
   
   // Проверка наличия обязательных параметров
   if (!symbol) {
@@ -396,23 +396,25 @@ async placeOrder(symbol, side, orderType, size, price = null, reduceOnly = false
     return Promise.reject(new Error(`Invalid side value: ${side}`));
   }
 
+  // Проверяем корректность tradeSide
+  if (tradeSide !== 'open' && tradeSide !== 'close') {
+    console.error(`Некорректное значение tradeSide: ${tradeSide}, должно быть open или close`);
+    return Promise.reject(new Error(`Invalid tradeSide value: ${tradeSide}`));
+  }
+
   try {
     // Создаем объект параметров для API
     const params = {
       symbol,
       marginCoin: 'USDT', // По умолчанию USDT
       size: size.toString(),
-      side: normalizedSide === 'buy' ? 'buy' : 'sell', // Переводим в нижний регистр для API
+      side: normalizedSide,
+      tradeSide: tradeSide, // Добавляем параметр tradeSide согласно требованиям API
       orderType: orderType.toLowerCase(), // API ожидает orderType в нижнем регистре
-      force: 'normal', // Вместо timeInForceValue используем force согласно документации
+      force: 'gtc', // Используем gtc согласно документации
       marginMode: 'isolated',
       clientOid: `order_${Date.now()}`
     };
-
-    // Добавляем reduceOnly только если он true
-    if (reduceOnly === true) {
-      params.reduceOnly = true;
-    }
 
     // Если это лимитный ордер, добавляем цену
     if (orderType.toLowerCase() === 'limit' && price) {
